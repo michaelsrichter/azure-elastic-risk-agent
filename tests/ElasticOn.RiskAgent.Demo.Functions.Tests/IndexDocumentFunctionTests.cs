@@ -138,4 +138,138 @@ public class IndexDocumentFunctionTests
             x => x.EnsureIndexExistsAsync(It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task ElasticsearchService_IndexDocumentAsync_WithCustomConfig_CallsExpectedMethods()
+    {
+        // Arrange
+        var document = new ElasticsearchDocument
+        {
+            Id = "test-id",
+            FilenameWithExtension = "test.pdf",
+            PageNumber = 1,
+            PageChunkNumber = 1,
+            Chunk = "Test chunk"
+        };
+
+        var customConfig = new ElasticsearchConfig
+        {
+            Uri = "http://custom-elasticsearch:9200",
+            ApiKey = "custom-key",
+            IndexName = "custom-index"
+        };
+
+        _mockElasticsearchService
+            .Setup(x => x.IndexDocumentAsync(document, customConfig, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _mockElasticsearchService.Object.IndexDocumentAsync(document, customConfig, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        _mockElasticsearchService.Verify(
+            x => x.IndexDocumentAsync(document, customConfig, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ElasticsearchService_IndexDocumentAsync_WithNullCustomConfig_UsesDefaultMethod()
+    {
+        // Arrange
+        var document = new ElasticsearchDocument
+        {
+            Id = "test-id",
+            FilenameWithExtension = "test.pdf",
+            PageNumber = 1,
+            PageChunkNumber = 1,
+            Chunk = "Test chunk"
+        };
+
+        ElasticsearchConfig? customConfig = null;
+
+        _mockElasticsearchService
+            .Setup(x => x.IndexDocumentAsync(document, customConfig, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _mockElasticsearchService.Object.IndexDocumentAsync(document, customConfig, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        _mockElasticsearchService.Verify(
+            x => x.IndexDocumentAsync(document, customConfig, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ElasticsearchService_EnsureIndexExistsAsync_WithCustomConfig_CallsExpectedMethods()
+    {
+        // Arrange
+        var customConfig = new ElasticsearchConfig
+        {
+            Uri = "http://custom-elasticsearch:9200",
+            IndexName = "custom-index"
+        };
+
+        _mockElasticsearchService
+            .Setup(x => x.EnsureIndexExistsAsync(customConfig, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _mockElasticsearchService.Object.EnsureIndexExistsAsync(customConfig, CancellationToken.None);
+
+        // Assert
+        Assert.True(result);
+        _mockElasticsearchService.Verify(
+            x => x.EnsureIndexExistsAsync(customConfig, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void IndexDocumentRequest_WithElasticsearchConfig_PropertiesSetCorrectly()
+    {
+        // Arrange & Act
+        var request = new IndexDocumentRequest
+        {
+            DocumentMetadata = new DocumentMetadata
+            {
+                FilenameWithExtension = "test.pdf"
+            },
+            PageNumber = 1,
+            PageChunkNumber = 1,
+            Chunk = "Test chunk",
+            ElasticsearchConfig = new ElasticsearchConfig
+            {
+                Uri = "http://custom:9200",
+                ApiKey = "custom-key",
+                IndexName = "custom-index"
+            }
+        };
+
+        // Assert
+        Assert.NotNull(request.ElasticsearchConfig);
+        Assert.Equal("http://custom:9200", request.ElasticsearchConfig.Uri);
+        Assert.Equal("custom-key", request.ElasticsearchConfig.ApiKey);
+        Assert.Equal("custom-index", request.ElasticsearchConfig.IndexName);
+    }
+
+    [Fact]
+    public void IndexDocumentRequest_WithoutElasticsearchConfig_PropertyIsNull()
+    {
+        // Arrange & Act
+        var request = new IndexDocumentRequest
+        {
+            DocumentMetadata = new DocumentMetadata
+            {
+                FilenameWithExtension = "test.pdf"
+            },
+            PageNumber = 1,
+            PageChunkNumber = 1,
+            Chunk = "Test chunk"
+        };
+
+        // Assert
+        Assert.Null(request.ElasticsearchConfig);
+    }
 }

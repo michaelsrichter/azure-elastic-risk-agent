@@ -2,6 +2,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
@@ -113,5 +114,15 @@ public sealed class ProcessPdfFunction
         return response;
     }
 
-    private sealed record ProcessPdfRequest(string? FileContent, DocumentMetadata? Metadata);
+    private sealed record ProcessPdfRequest
+    {
+        [JsonPropertyName("fileContent")]
+        public string? FileContent { get; init; }
+
+        [JsonPropertyName("metadata")]
+        public DocumentMetadata? Metadata { get; init; }
+
+        [JsonPropertyName("elasticsearchConfig")]
+        public ElasticsearchConfig? ElasticsearchConfig { get; init; }
+    }
 }

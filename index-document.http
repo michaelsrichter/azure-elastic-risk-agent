@@ -37,3 +37,73 @@ Content-Type: application/json
   "pageChunkNumber": 2,
   "chunk": "This is the second chunk of text from the same page. It continues with more risk assessment details and procedures."
 }
+
+### Sample with custom Elasticsearch configuration (overrides all default settings)
+POST http://localhost:7071/api/index-document
+Content-Type: application/json
+
+{
+  "documentMetadata": {
+    "id": "custom-doc-001",
+    "filenameWithExtension": "custom-document.pdf",
+    "fullPath": "/custom/documents/custom-document.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://example.sharepoint.com/custom/documents/custom-document.pdf"
+  },
+  "pageNumber": 1,
+  "pageChunkNumber": 1,
+  "chunk": "This document will be indexed using custom Elasticsearch settings.",
+  "elasticsearchConfig": {
+    "uri": "http://custom-elasticsearch:9200",
+    "apiKey": "custom-api-key-12345",
+    "indexName": "custom-risk-documents"
+  }
+}
+
+### Sample with partial custom Elasticsearch configuration (only custom index name)
+POST http://localhost:7071/api/index-document
+Content-Type: application/json
+
+{
+  "documentMetadata": {
+    "id": "special-doc-001",
+    "filenameWithExtension": "special-document.pdf",
+    "fullPath": "/special/documents/special-document.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://example.sharepoint.com/special/documents/special-document.pdf"
+  },
+  "pageNumber": 1,
+  "pageChunkNumber": 1,
+  "chunk": "This document will be indexed in a special index, but using default URI and API key from settings.",
+  "elasticsearchConfig": {
+    "indexName": "special-documents-index"
+  }
+}
+
+### Sample for tenant-specific indexing (multi-tenant scenario)
+POST http://localhost:7071/api/index-document
+Content-Type: application/json
+
+{
+  "documentMetadata": {
+    "id": "tenant-a-doc-001",
+    "filenameWithExtension": "tenant-a-document.pdf",
+    "fullPath": "/tenants/tenant-a/documents/tenant-a-document.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://tenant-a.sharepoint.com/documents/tenant-a-document.pdf"
+  },
+  "pageNumber": 1,
+  "pageChunkNumber": 1,
+  "chunk": "This document belongs to Tenant A and will be stored in their dedicated Elasticsearch cluster.",
+  "elasticsearchConfig": {
+    "uri": "http://tenant-a-elasticsearch:9200",
+    "apiKey": "tenant-a-api-key",
+    "indexName": "tenant-a-risk-documents"
+  }
+}

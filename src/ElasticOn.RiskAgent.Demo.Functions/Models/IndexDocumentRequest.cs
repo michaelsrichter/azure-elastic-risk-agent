@@ -15,4 +15,7 @@ internal sealed record IndexDocumentRequest
 
     [JsonPropertyName("chunk")]
     public string Chunk { get; init; } = string.Empty;
+
+    [JsonPropertyName("elasticsearchConfig")]
+    public ElasticsearchConfig? ElasticsearchConfig { get; init; }
 }

@@ -73,8 +73,8 @@ internal sealed class IndexDocumentFunction
 
             _logger.LogInformation("Processing document with generated ID: {DocumentId}", elasticsearchDocument.Id);
 
-            // Index the document
-            var success = await _elasticsearchService.IndexDocumentAsync(elasticsearchDocument, cancellationToken);
+            // Index the document using custom config if provided, otherwise use default config
+            var success = await _elasticsearchService.IndexDocumentAsync(elasticsearchDocument, indexRequest.ElasticsearchConfig, cancellationToken);
 
             if (success)
             {
