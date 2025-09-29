@@ -19,26 +19,66 @@ The Functions project provides a cloud-ready HTTP API for processing PDF documen
 #### `ProcessPdfFunction`
 - **Endpoint**: `POST /api/process-pdf`
 - **Purpose**: Accepts PDF documents encoded as Base64 strings along with structured metadata
-- **Processing**: Validates input, decodes PDF content, processes metadata as strongly-typed objects
-- **Response**: Returns structured information about the processed document
+- **Processing**: Validates input, decodes PDF content, extracts text from all pages, performs text chunking with configurable overlap, and processes metadata as strongly-typed objects
+- **Response**: Returns structured information about the processed document including chunking statistics
+
+#### `IndexDocumentFunction`
+- **Endpoint**: `POST /api/index-document`
+- **Purpose**: Indexes document chunks with metadata into Elasticsearch
+- **Processing**: Accepts document chunk data and stores it in Elasticsearch for search and retrieval
+- **Response**: Returns document ID and indexing status
 
 #### `ProcessPdfParser` (Service)
-- **Purpose**: Handles Base64 decoding and metadata processing
+- **Purpose**: Orchestrates PDF processing workflow including Base64 decoding, text extraction, and chunking
 - **Features**: 
   - Robust Base64 decoding with URL-safe character handling
+  - Integration with PdfTextExtractor for text extraction
+  - Integration with TextChunkingService for text chunking
+  - Configurable chunk size and overlap settings
   - Document metadata validation and processing
   - Strong typing for document metadata objects
+
+#### `PdfTextExtractor` (Service)
+- **Purpose**: Extracts text content from PDF documents
+- **Features**:
+  - Extracts text from all pages of a PDF document
+  - Multiple extraction methods for robustness (built-in text, words, letters, raw content streams)
+  - Graceful error handling for PDFs with font loading issues
+  - Lenient parsing options for malformed PDFs
+
+#### `TextChunkingService` (Service)
+- **Purpose**: Chunks text into overlapping segments for improved context in downstream processing
+- **Features**:
+  - Configurable chunk size (default: 500 characters)
+  - Configurable overlap size (default: 50 characters)
+  - Generates chunking statistics (page count, chunks per page, min/max/average)
+  - Validates input parameters to ensure chunk size is greater than overlap
+
+#### `ElasticsearchService` (Service)
+- **Purpose**: Manages document indexing to Elasticsearch
+- **Features**:
+  - Configurable Elasticsearch connection (URI, API key, index name)
+  - Document ID generation based on filename, page number, and chunk number
+  - Automatic index creation if not exists
+  - Comprehensive error handling and logging
 
 #### `DocumentMetadata` (Model)
 - **Purpose**: Strongly-typed representation of document metadata
 - **Features**: Essential document properties including ID, filename, path, version, timestamps, and link information
 
+#### `ChunkingStats` (Model)
+- **Purpose**: Statistics about text chunking results
+- **Features**: Page count, chunks per page array, average/max/min chunks per page
+
 ### Dependencies
 - **Microsoft.Azure.Functions.Worker** (2.1.0) - Core Azure Functions isolated worker runtime
 - **Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore** (2.0.2) - HTTP trigger support with ASP.NET Core integration
+- **Microsoft.Azure.Functions.Worker.Extensions.OpenApi** (1.5.1) - OpenAPI/Swagger support for Azure Functions
 - **Microsoft.ApplicationInsights.WorkerService** (2.23.0) - Application Insights telemetry and logging
 - **Microsoft.Azure.Functions.Worker.ApplicationInsights** (2.0.0) - Application Insights integration for Functions
 - **Microsoft.Azure.Functions.Worker.Sdk** (2.0.5) - Build-time SDK for Functions
+- **PdfPig** (0.1.11) - PDF text extraction and manipulation
+- **Elastic.Clients.Elasticsearch** (9.1.7) - Official Elasticsearch .NET client for document indexing
 
 ### Example Request
 
@@ -69,10 +109,34 @@ Content-Type: application/json
   "document": {
     "id": "sample-doc-001",
     "filenameWithExtension": "sample-doc.pdf",
-    "versionNumber": "1.0"
+    "versionNumber": "1.0",
+    "pageCount": 5,
+    "averageChunksPerPage": 3.2,
+    "maxChunksPerPage": 5,
+    "minChunksPerPage": 2
   }
 }
 ```
+
+### Configuration
+
+The PDF processing function supports configurable text chunking parameters that can be set in `local.settings.json`:
+
+- **ChunkSize** (default: 500) - Size of each text chunk in characters
+- **ChunkOverlap** (default: 50) - Number of characters to overlap between consecutive chunks
+
+Chunking with overlap helps maintain context across chunk boundaries, which is important for downstream processing like semantic search or LLM analysis.
+
+### Elasticsearch Integration
+
+The solution includes Elasticsearch integration for indexing processed document chunks:
+
+- **ElasticsearchService** - Handles connection and indexing operations
+- **IndexDocumentFunction** - Provides HTTP API endpoint for indexing document chunks
+- **Configuration** - Supports configurable Elasticsearch URI, API key, and index name
+- **Document ID Generation** - Automatic generation of unique IDs based on filename, page number, and chunk number
+
+For detailed information about the IndexDocument function, see [docs/IndexDocumentFunction-README.md](docs/IndexDocumentFunction-README.md).
 
 ## Tests Project (`ElasticOn.RiskAgent.Demo.Functions.Tests`)
 
@@ -83,12 +147,18 @@ Provides comprehensive unit testing for the Functions project, ensuring reliabil
 
 #### `ProcessPdfParserTests`
 - **PDF Validation**: Verifies successful Base64 decoding and PDF format validation
+- **Text Extraction**: Tests PDF text extraction from all pages
+- **Text Chunking**: Validates text chunking with configurable chunk size and overlap
+- **Chunking Statistics**: Verifies correct calculation of page count, chunks per page, and min/max/average statistics
 - **Metadata Processing**: Tests processing of metadata objects as strongly-typed `DocumentMetadata` instances  
 - **Error Handling**: Validates proper exception handling for malformed input
 
 ### Test Features
 - **Sample Data**: Uses realistic test data from `samplePdfFileRequest.json`
 - **PDF Verification**: Validates decoded PDF content starts with proper PDF header (`%PDF-`)
+- **Text Extraction Verification**: Ensures text is correctly extracted from PDF pages
+- **Chunking Validation**: Verifies text is properly chunked with correct overlap behavior
+- **Statistics Validation**: Ensures chunking statistics accurately reflect the chunking results
 - **Metadata Mapping**: Ensures all essential document metadata fields are correctly parsed and accessible
 
 ### Dependencies
