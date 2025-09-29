@@ -4,7 +4,10 @@ using ElasticOn.RiskAgent.Demo.Functions.Models;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Functions;
 
@@ -20,6 +23,12 @@ internal sealed class IndexDocumentFunction
     }
 
     [Function("IndexDocument")]
+    [OpenApiOperation(operationId: "IndexDocument", tags: new[] { "Documents" }, Summary = "Index a document chunk", Description = "Indexes a document chunk with metadata into Elasticsearch")]
+    [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
+    [OpenApiRequestBody("application/json", typeof(IndexDocumentRequest), Description = "JSON request body containing document chunk data")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(object), Description = "Document successfully indexed with document ID")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.BadRequest, Description = "Bad request - invalid or missing request data")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.InternalServerError, Description = "Internal server error occurred while processing")]
     public async Task<HttpResponseData> RunAsync(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "index-document")] HttpRequestData req,
         CancellationToken cancellationToken)

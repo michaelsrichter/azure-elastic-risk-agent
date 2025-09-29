@@ -4,7 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using ElasticOn.RiskAgent.Demo.Functions.Models;
 
@@ -20,6 +23,12 @@ public sealed class ProcessPdfFunction
     }
 
     [Function("ProcessPDF")]
+    [OpenApiOperation(operationId: "ProcessPDF", tags: new[] { "Documents" }, Summary = "Process PDF document", Description = "Processes a PDF document to extract text content and metadata")]
+    [OpenApiSecurity("function_key", SecuritySchemeType.ApiKey, Name = "code", In = OpenApiSecurityLocationType.Query)]
+    [OpenApiRequestBody("application/json", typeof(ProcessPdfRequest), Description = "JSON request body containing base64 encoded PDF content and metadata")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(object), Description = "PDF processed successfully with extracted content")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.BadRequest, Description = "Bad request - invalid or missing request data")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.InternalServerError, Description = "Internal server error occurred while processing")]
     public async Task<HttpResponseData> RunAsync(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "process-pdf")] HttpRequestData request)
     {
