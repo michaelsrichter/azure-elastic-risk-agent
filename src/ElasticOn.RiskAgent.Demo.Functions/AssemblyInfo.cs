@@ -1,0 +1,3 @@
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("ElasticOn.RiskAgent.Demo.Functions.Tests")]

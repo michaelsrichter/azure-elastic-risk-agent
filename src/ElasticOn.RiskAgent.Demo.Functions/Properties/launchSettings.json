@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "ElasticOn.RiskAgent.Demo.Functions": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7255",
+      "launchBrowser": false
+    }
+  }
+}
