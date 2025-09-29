@@ -6,6 +6,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
+using ElasticOn.RiskAgent.Demo.Functions.Models;
 
 namespace ElasticOn.RiskAgent.Demo.Functions;
 
@@ -44,7 +45,7 @@ public sealed class ProcessPdfFunction
                 .ConfigureAwait(false);
         }
 
-        if (payload is null || string.IsNullOrWhiteSpace(payload.FileContent) || string.IsNullOrWhiteSpace(payload.Metadata))
+        if (payload is null || string.IsNullOrWhiteSpace(payload.FileContent) || payload.Metadata is null)
         {
             return await CreateErrorResponseAsync(request, HttpStatusCode.BadRequest,
                     "Both fileContent and metadata are required.")
@@ -63,13 +64,6 @@ public sealed class ProcessPdfFunction
                     "fileContent must be a valid Base64 string.")
                 .ConfigureAwait(false);
         }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "metadata must be a valid JSON object.");
-            return await CreateErrorResponseAsync(request, HttpStatusCode.BadRequest,
-                    "metadata must be a valid JSON object.")
-                .ConfigureAwait(false);
-        }
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid payload supplied to ProcessPDF.");
@@ -77,23 +71,21 @@ public sealed class ProcessPdfFunction
                 .ConfigureAwait(false);
         }
 
-        JsonObject jsonObject = parsedData.MetadataObject;
-
-        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata keys: {Keys}",
+        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}",
             parsedData.PdfBytes.Length,
-            jsonObject.Select(kvp => kvp.Key).ToArray());
+            parsedData.Metadata.Id);
 
         var response = request.CreateResponse(HttpStatusCode.Accepted);
         await response.WriteAsJsonAsync(new
         {
             message = "PDF accepted for processing.",
             size = parsedData.PdfBytes.Length,
-            metadata = jsonObject,
+            metadata = parsedData.Metadata,
             document = new
             {
-                parsedData.Metadata.Name,
+                parsedData.Metadata.Id,
+                parsedData.Metadata.FilenameWithExtension,
                 parsedData.Metadata.VersionNumber,
-                Author = parsedData.Metadata.Author?.DisplayName,
                 PageCount = parsedData.PageCount,
                 FirstPageText = parsedData.FirstPageText
             }
@@ -112,5 +104,5 @@ public sealed class ProcessPdfFunction
         return response;
     }
 
-    private sealed record ProcessPdfRequest(string? FileContent, string? Metadata);
+    private sealed record ProcessPdfRequest(string? FileContent, DocumentMetadata? Metadata);
 }

@@ -16,37 +16,13 @@ The function expects a JSON payload with the following structure:
 ```json
 {
   "documentMetadata": {
-    "@odata.etag": "W/\"1\"",
-    "ItemInternalId": "123", 
-    "ID": 1,
-    "{Name}": "Document Name",
-    "{FilenameWithExtension}": "document.pdf",
-    "{FullPath}": "/path/to/document.pdf",
-    "{VersionNumber}": "1.0",
-    "Author": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.User",
-      "Claims": "user@example.com",
-      "DisplayName": "John Doe",
-      "Email": "john.doe@example.com",
-      "Picture": ""
-    },
-    "Editor": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.User", 
-      "Claims": "editor@example.com",
-      "DisplayName": "Jane Editor",
-      "Email": "jane.editor@example.com",
-      "Picture": ""
-    },
-    "Modified": "2025-09-28T10:30:00Z",
-    "Created": "2025-09-28T10:00:00Z",
-    "{Link}": "https://example.sharepoint.com/documents/document.pdf",
-    "{DriveId}": "drive123",
-    "{DriveItemId}": "item456",
-    "{ContentType}": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.ContentType",
-      "Id": "0x0101",
-      "Name": "Document"
-    }
+    "id": "sample-doc-001",
+    "filenameWithExtension": "document.pdf",
+    "fullPath": "/path/to/document.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://example.sharepoint.com/documents/document.pdf"
   },
   "pageNumber": 1,
   "pageChunkNumber": 1,
@@ -56,14 +32,20 @@ The function expects a JSON payload with the following structure:
 
 ### Required Fields
 
-- `documentMetadata.{FilenameWithExtension}`: The filename with extension (used for ID generation)
+- `documentMetadata.filenameWithExtension`: The filename with extension (used for ID generation)
 - `pageNumber`: Page number of the document (integer)
 - `pageChunkNumber`: Chunk number within the page (integer)
 - `chunk`: The extracted text content (string)
 
 ### Optional Fields
 
-All other fields in `documentMetadata` are optional but recommended for better document management and search functionality.
+All other fields in `documentMetadata` are optional but recommended for better document management and search functionality:
+- `id`: Unique document identifier
+- `fullPath`: Full path to the document
+- `versionNumber`: Document version
+- `modified`: Last modified timestamp
+- `created`: Creation timestamp
+- `link`: Link to the original document
 
 ## Response Format
 
@@ -81,7 +63,7 @@ All other fields in `documentMetadata` are optional but recommended for better d
 #### Bad Request (400)
 - Empty request body
 - Missing or invalid `documentMetadata`
-- Missing `FilenameWithExtension`
+- Missing `filenameWithExtension`
 - Invalid JSON format
 
 #### Internal Server Error (500)
@@ -108,7 +90,7 @@ The function creates documents in Elasticsearch with the following fields:
 ## ID Generation Logic
 
 The document ID is generated using SHA256 hash of the combination:
-`{FilenameWithExtension}_{PageNumber}_{PageChunkNumber}`
+`{filenameWithExtension}_{pageNumber}_{pageChunkNumber}`
 
 This ensures:
 - Unique IDs for each chunk

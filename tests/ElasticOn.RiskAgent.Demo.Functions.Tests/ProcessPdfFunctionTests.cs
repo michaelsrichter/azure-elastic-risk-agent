@@ -9,6 +9,7 @@ using UglyToad.PdfPig.Writer;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Fonts;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
+using ElasticOn.RiskAgent.Demo.Functions.Models;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 
@@ -38,17 +39,18 @@ public sealed class ProcessPdfParserTests
 
         var result = ProcessPdfParser.Parse(payload.FileContent!, payload.Metadata!);
 
-        Assert.Equal("pub-2025-cybersecurity-report", result.Metadata.Name);
+        Assert.NotEmpty(result.Metadata.Id);
+        Assert.Equal("pub-2025-cybersecurity-report.pdf", result.Metadata.FilenameWithExtension);
         Assert.Equal("Risk Assessments/pub-2025-cybersecurity-report.pdf", result.Metadata.FullPath);
-        Assert.Equal("MOD Administrator", result.Metadata.Author?.DisplayName);
         Assert.Equal("1.0", result.Metadata.VersionNumber);
     }
 
     [Fact]
     public void Parse_WithEmptyFileContent_ThrowsArgumentException()
     {
+        var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         var exception = Assert.Throws<ArgumentException>(() =>
-            ProcessPdfParser.Parse("", "{\"test\": \"value\"}"));
+            ProcessPdfParser.Parse("", metadata));
         
         Assert.Contains("fileContent is required", exception.Message);
     }
@@ -56,63 +58,30 @@ public sealed class ProcessPdfParserTests
     [Fact]
     public void Parse_WithNullFileContent_ThrowsArgumentException()
     {
+        var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         var exception = Assert.Throws<ArgumentException>(() =>
-            ProcessPdfParser.Parse(null!, "{\"test\": \"value\"}"));
+            ProcessPdfParser.Parse(null!, metadata));
         
         Assert.Contains("fileContent is required", exception.Message);
     }
 
     [Fact]
-    public void Parse_WithEmptyMetadata_ThrowsArgumentException()
+    public void Parse_WithNullMetadata_ThrowsArgumentNullException()
     {
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("%PDF-1.4 test"));
         
-        var exception = Assert.Throws<ArgumentException>(() =>
-            ProcessPdfParser.Parse(validPdfBase64, ""));
-        
-        Assert.Contains("metadata is required", exception.Message);
-    }
-
-    [Fact]
-    public void Parse_WithNullMetadata_ThrowsArgumentException()
-    {
-        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("%PDF-1.4 test"));
-        
-        var exception = Assert.Throws<ArgumentException>(() =>
+        var exception = Assert.Throws<ArgumentNullException>(() =>
             ProcessPdfParser.Parse(validPdfBase64, null!));
         
-        Assert.Contains("metadata is required", exception.Message);
+        Assert.Contains("metadata", exception.Message);
     }
 
     [Fact]
     public void Parse_WithInvalidBase64_ThrowsFormatException()
     {
+        var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         Assert.Throws<FormatException>(() =>
-            ProcessPdfParser.Parse("invalid-base64!@#", "{\"test\": \"value\"}"));
-    }
-
-    [Fact]
-    public void Parse_WithInvalidMetadataJson_ThrowsJsonException()
-    {
-        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("%PDF-1.4 test"));
-        
-        // JsonReaderException can be thrown for invalid JSON
-        var exception = Assert.ThrowsAny<Exception>(() =>
-            ProcessPdfParser.Parse(validPdfBase64, "{ invalid json }"));
-        
-        // Verify it's a JSON-related exception
-        Assert.True(exception is JsonException || exception.GetType().Name.Contains("Json"));
-    }
-
-    [Fact]
-    public void Parse_WithNonObjectMetadata_ThrowsJsonException()
-    {
-        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("%PDF-1.4 test"));
-        
-        var exception = Assert.Throws<JsonException>(() =>
-            ProcessPdfParser.Parse(validPdfBase64, "\"just a string\""));
-        
-        Assert.Contains("Metadata must deserialize to a JSON object", exception.Message);
+            ProcessPdfParser.Parse("invalid-base64!@#", metadata));
     }
 
     [Fact]
@@ -120,15 +89,13 @@ public sealed class ProcessPdfParserTests
     {
         var testContent = "%PDF-1.4\ntest content";
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
-        var metadata = "{\"{Name}\": \"test-doc\", \"{VersionNumber}\": \"1.0\"}";
+        var metadata = new DocumentMetadata { Id = "test-doc-id", VersionNumber = "1.0" };
         
         var result = ProcessPdfParser.Parse(validPdfBase64, metadata);
         
         Assert.Equal(testContent.Length, result.PdfBytes.Length);
-        Assert.Equal("test-doc", result.Metadata.Name);
+        Assert.Equal("test-doc-id", result.Metadata.Id);
         Assert.Equal("1.0", result.Metadata.VersionNumber);
-        Assert.NotNull(result.MetadataObject);
-        Assert.Equal("test-doc", result.MetadataObject["{Name}"]?.ToString());
     }
 
     private static SamplePayload ReadSamplePayload()
@@ -143,7 +110,7 @@ public sealed class ProcessPdfParserTests
         }) ?? throw new InvalidOperationException("Unable to deserialize sample request payload.");
     }
 
-    private sealed record SamplePayload(string? FileContent, string? Metadata);
+    private sealed record SamplePayload(string? FileContent, DocumentMetadata? Metadata);
 }
 
 public sealed class ProcessPdfFunctionLogicTests
@@ -222,7 +189,7 @@ public sealed class ProcessPdfFunctionLogicTests
     {
         var testContent = "%PDF-1.4\ntest content";
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
-        var metadata = "{\"Name\": \"test-doc\", \"keys\": [\"key1\", \"key2\"]}";
+        var metadata = new DocumentMetadata { Id = "test-doc", FilenameWithExtension = "test-doc.pdf" };
         
         var parsedData = ProcessPdfParser.Parse(validPdfBase64, metadata);
         LogProcessingInfo(_logger, parsedData);
@@ -232,7 +199,7 @@ public sealed class ProcessPdfFunctionLogicTests
             LogLevel.Information,
             Arg.Any<EventId>(),
             Arg.Is<object>(o => o.ToString()!.Contains("ProcessPDF invoked with payload size") && 
-                               o.ToString()!.Contains("bytes and metadata keys")),
+                               o.ToString()!.Contains("bytes and metadata for document")),
             null,
             Arg.Any<Func<object, Exception?, string>>());
     }
@@ -265,9 +232,9 @@ public sealed class ProcessPdfFunctionLogicTests
 
     private static void LogProcessingInfo<T>(ILogger<T> logger, ProcessPdfData parsedData)
     {
-        logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata keys: {Keys}",
+        logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}",
             parsedData.PdfBytes.Length,
-            parsedData.MetadataObject.Select(kvp => kvp.Key).ToArray());
+            parsedData.Metadata.Id);
     }
 
     private sealed record TestPayload(string? FileContent, string? Metadata);
@@ -351,7 +318,7 @@ public sealed class PdfTextExtractorTests
     {
         // Arrange
         var invalidPdfData = Convert.ToBase64String(Encoding.UTF8.GetBytes("This is not a PDF file"));
-        var metadata = "{\"key\":\"value\"}";
+        var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
 
         // Act
         var result = ProcessPdfParser.Parse(invalidPdfData, metadata);
@@ -373,5 +340,5 @@ public sealed class PdfTextExtractorTests
         }) ?? throw new InvalidOperationException("Unable to deserialize sample request payload.");
     }
 
-    private sealed record SamplePayload(string? FileContent, string? Metadata);
+    private sealed record SamplePayload(string? FileContent, DocumentMetadata? Metadata);
 }

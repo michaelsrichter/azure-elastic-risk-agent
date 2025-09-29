@@ -18,20 +18,20 @@ The Functions project provides a cloud-ready HTTP API for processing PDF documen
 
 #### `ProcessPdfFunction`
 - **Endpoint**: `POST /api/process-pdf`
-- **Purpose**: Accepts PDF documents encoded as Base64 strings along with JSON metadata
-- **Processing**: Validates input, decodes PDF content, parses metadata into strongly-typed objects
+- **Purpose**: Accepts PDF documents encoded as Base64 strings along with structured metadata
+- **Processing**: Validates input, decodes PDF content, processes metadata as strongly-typed objects
 - **Response**: Returns structured information about the processed document
 
 #### `ProcessPdfParser` (Service)
-- **Purpose**: Handles Base64 decoding and JSON metadata parsing
+- **Purpose**: Handles Base64 decoding and metadata processing
 - **Features**: 
   - Robust Base64 decoding with URL-safe character handling
-  - JSON metadata validation and deserialization
-  - Strong typing conversion for document metadata
+  - Document metadata validation and processing
+  - Strong typing for document metadata objects
 
 #### `DocumentMetadata` (Model)
-- **Purpose**: Strongly-typed representation of SharePoint document metadata
-- **Features**: Comprehensive mapping of SharePoint document properties including author, version, timestamps, and content type information
+- **Purpose**: Strongly-typed representation of document metadata
+- **Features**: Essential document properties including ID, filename, path, version, timestamps, and link information
 
 ### Dependencies
 - **Microsoft.Azure.Functions.Worker** (2.1.0) - Core Azure Functions isolated worker runtime
@@ -48,7 +48,15 @@ Content-Type: application/json
 
 {
   "fileContent": "JVBERi0xLjc...",
-  "metadata": "{\"Name\":\"sample-doc\",\"FullPath\":\"Risk Assessments/sample-doc.pdf\",\"Author\":{\"DisplayName\":\"John Doe\"},\"VersionNumber\":\"1.0\"}"
+  "metadata": {
+    "id": "sample-doc-001",
+    "filenameWithExtension": "sample-doc.pdf",
+    "fullPath": "Risk Assessments/sample-doc.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-29T10:00:00Z",
+    "created": "2025-09-29T09:00:00Z",
+    "link": "https://example.sharepoint.com/documents/sample-doc.pdf"
+  }
 }
 ```
 
@@ -59,9 +67,9 @@ Content-Type: application/json
   "size": 1024,
   "metadata": { /* parsed metadata object */ },
   "document": {
-    "name": "sample-doc",
-    "versionNumber": "1.0",
-    "author": "John Doe"
+    "id": "sample-doc-001",
+    "filenameWithExtension": "sample-doc.pdf",
+    "versionNumber": "1.0"
   }
 }
 ```
@@ -75,13 +83,13 @@ Provides comprehensive unit testing for the Functions project, ensuring reliabil
 
 #### `ProcessPdfParserTests`
 - **PDF Validation**: Verifies successful Base64 decoding and PDF format validation
-- **Metadata Parsing**: Tests conversion of JSON metadata strings to strongly-typed `DocumentMetadata` objects  
+- **Metadata Processing**: Tests processing of metadata objects as strongly-typed `DocumentMetadata` instances  
 - **Error Handling**: Validates proper exception handling for malformed input
 
 ### Test Features
 - **Sample Data**: Uses realistic test data from `samplePdfFileRequest.json`
 - **PDF Verification**: Validates decoded PDF content starts with proper PDF header (`%PDF-`)
-- **Metadata Mapping**: Ensures all SharePoint metadata fields are correctly parsed and accessible
+- **Metadata Mapping**: Ensures all essential document metadata fields are correctly parsed and accessible
 
 ### Dependencies
 - **xunit** (2.9.2) - Primary testing framework
@@ -91,7 +99,7 @@ Provides comprehensive unit testing for the Functions project, ensuring reliabil
 - **UglyToad.PdfPig** (0.1.8) - PDF manipulation and validation (for future enhancements)
 
 ### Test Data
-The tests utilize a sample PDF request file (`samplePdfFileRequest.json`) that contains realistic SharePoint document metadata and Base64-encoded PDF content.
+The tests utilize a sample PDF request file (`samplePdfFileRequest.json`) that contains essential document metadata and Base64-encoded PDF content.
 
 ## Prerequisites
 

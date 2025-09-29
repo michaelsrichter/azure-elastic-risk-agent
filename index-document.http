@@ -6,37 +6,13 @@ Content-Type: application/json
 
 {
   "documentMetadata": {
-    "@odata.etag": "W/\"1\"",
-    "ItemInternalId": "123",
-    "ID": 1,
-    "{Name}": "Sample Document",
-    "{FilenameWithExtension}": "sample.pdf",
-    "{FullPath}": "/documents/sample.pdf",
-    "{VersionNumber}": "1.0",
-    "Author": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.User",
-      "Claims": "user@example.com",
-      "DisplayName": "John Doe",
-      "Email": "john.doe@example.com",
-      "Picture": ""
-    },
-    "Editor": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.User",
-      "Claims": "editor@example.com",
-      "DisplayName": "Jane Editor",
-      "Email": "jane.editor@example.com",
-      "Picture": ""
-    },
-    "Modified": "2025-09-28T10:30:00Z",
-    "Created": "2025-09-28T10:00:00Z",
-    "{Link}": "https://example.sharepoint.com/documents/sample.pdf",
-    "{DriveId}": "drive123",
-    "{DriveItemId}": "item456",
-    "{ContentType}": {
-      "@odata.type": "#Microsoft.Azure.ConnectorServices.SharePoint.ContentType",
-      "Id": "0x0101",
-      "Name": "Document"
-    }
+    "id": "sample-doc-001",
+    "filenameWithExtension": "sample.pdf",
+    "fullPath": "/documents/sample.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://example.sharepoint.com/documents/sample.pdf"
   },
   "pageNumber": 1,
   "pageChunkNumber": 1,
@@ -49,12 +25,13 @@ Content-Type: application/json
 
 {
   "documentMetadata": {
-    "{FilenameWithExtension}": "sample.pdf",
-    "{FullPath}": "/documents/sample.pdf",
-    "{VersionNumber}": "1.0",
-    "Modified": "2025-09-28T10:30:00Z",
-    "Created": "2025-09-28T10:00:00Z",
-    "{Link}": "https://example.sharepoint.com/documents/sample.pdf"
+    "id": "sample-doc-002",
+    "filenameWithExtension": "sample.pdf",
+    "fullPath": "/documents/sample.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-09-28T10:30:00Z",
+    "created": "2025-09-28T10:00:00Z",
+    "link": "https://example.sharepoint.com/documents/sample.pdf"
   },
   "pageNumber": 1,
   "pageChunkNumber": 2,

@@ -25,6 +25,7 @@ public class IndexDocumentFunctionTests
         {
             DocumentMetadata = new DocumentMetadata
             {
+                Id = "test-doc-id",
                 FilenameWithExtension = "test.pdf",
                 FullPath = "/documents/test.pdf",
                 VersionNumber = "1.0",
