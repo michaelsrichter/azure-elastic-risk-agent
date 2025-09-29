@@ -20,6 +20,7 @@ internal sealed class ElasticsearchService : IElasticsearchService
     private readonly string _indexName;
     private readonly string _elasticsearchUri;
     private readonly string? _apiKey;
+    private readonly string? _azureOpenAiInferenceId;
 
     public ElasticsearchService(IConfiguration configuration, ILogger<ElasticsearchService> logger)
     {
@@ -28,12 +29,21 @@ internal sealed class ElasticsearchService : IElasticsearchService
         _elasticsearchUri = configuration["ElasticsearchUri"] ?? "http://localhost:9200";
         _apiKey = configuration["ElasticsearchApiKey"];
         _indexName = configuration["ElasticsearchIndexName"] ?? "risk-agent-documents";
+        _azureOpenAiInferenceId = configuration["AzureOpenAiInferenceId"];
+
+        _logger.LogInformation("Elasticsearch configuration - Uri: {Uri}, IndexName: {IndexName}, HasApiKey: {HasApiKey}", 
+            _elasticsearchUri, _indexName, !string.IsNullOrEmpty(_apiKey));
 
         var settings = new ElasticsearchClientSettings(new Uri(_elasticsearchUri));
 
         if (!string.IsNullOrEmpty(_apiKey))
         {
             settings.Authentication(new Elastic.Transport.ApiKey(_apiKey));
+            _logger.LogInformation("API Key authentication configured");
+        }
+        else
+        {
+            _logger.LogWarning("No API Key provided - using anonymous access");
         }
 
         _client = new ElasticsearchClient(settings);
@@ -54,11 +64,20 @@ internal sealed class ElasticsearchService : IElasticsearchService
             }
 
             _logger.LogInformation("Index '{IndexName}' does not exist, creating it", _indexName);
+            _logger.LogInformation("Using Azure OpenAI inference endpoint: {InferenceId}", _azureOpenAiInferenceId ?? "azure-openai-inference");
 
+            // Create index with semantic text mapping for Azure OpenAI
+            // Note: Removed shard/replica settings for serverless compatibility
             var createResponse = await _client.Indices.CreateAsync(_indexName, c => c
-                .Settings(s => s
-                    .NumberOfShards(1)
-                    .NumberOfReplicas(0)
+                .Mappings(m => m
+                    .Properties(ps => ps
+                        .Text("chunk", t => t // For the source "chunk" field
+                            .CopyTo("semantic_chunk") // Copy content to semantic_chunk field
+                        )
+                        .SemanticText("semantic_chunk", st => st // For the semantic_chunk field
+                            .InferenceId(_azureOpenAiInferenceId ?? "azure-openai-inference") // reference Azure OpenAI endpoint id
+                        )
+                    )
                 ), cancellationToken);
 
             if (createResponse.IsValidResponse)
@@ -196,10 +215,18 @@ internal sealed class ElasticsearchService : IElasticsearchService
 
             _logger.LogInformation("Index '{IndexName}' does not exist, creating it", indexName);
 
+            // Create index with semantic text mapping for Azure OpenAI
+            // Note: Removed shard/replica settings for serverless compatibility
             var createResponse = await client.Indices.CreateAsync(indexName, c => c
-                .Settings(s => s
-                    .NumberOfShards(1)
-                    .NumberOfReplicas(0)
+                .Mappings(m => m
+                    .Properties(ps => ps
+                        .Text("chunk", t => t // For the source "chunk" field
+                            .CopyTo("semantic_chunk") // Copy content to semantic_chunk field
+                        )
+                        .SemanticText("semantic_chunk", st => st // For the semantic_chunk field
+                            .InferenceId(_azureOpenAiInferenceId ?? "azure-openai-inference") // reference Azure OpenAI endpoint id
+                        )
+                    )
                 ), cancellationToken);
 
             if (createResponse.IsValidResponse)

@@ -10,6 +10,8 @@ using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Fonts;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using ElasticOn.RiskAgent.Demo.Functions.Models;
+using System.Net.Http;
+using Microsoft.Extensions.Configuration;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 
@@ -96,6 +98,71 @@ public sealed class ProcessPdfParserTests
         Assert.Equal(testContent.Length, result.PdfBytes.Length);
         Assert.Equal("test-doc-id", result.Metadata.Id);
         Assert.Equal("1.0", result.Metadata.VersionNumber);
+    }
+
+    [Fact]
+    public void Parse_WithHttpClient_DoesNotThrow()
+    {
+        // Arrange
+        var testContent = "%PDF-1.4\ntest content with multiple pages\n\f\nsecond page content";
+        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
+        var metadata = new DocumentMetadata { Id = "test-doc-id", FilenameWithExtension = "test.pdf" };
+        var mockHttpClient = Substitute.For<HttpClient>();
+
+        // Act & Assert - Should not throw
+        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, mockHttpClient);
+        
+        Assert.NotNull(result);
+        Assert.Equal("test-doc-id", result.Metadata.Id);
+    }
+
+    [Fact]
+    public void Parse_WithNullHttpClient_DoesNotCallIndexing()
+    {
+        // Arrange
+        var testContent = "%PDF-1.4\ntest content";
+        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
+        var metadata = new DocumentMetadata { Id = "test-doc-id", FilenameWithExtension = "test.pdf" };
+
+        // Act - Should not attempt any HTTP calls
+        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, httpClient: null);
+        
+        // Assert - Should process normally without indexing
+        Assert.NotNull(result);
+        Assert.Equal("test-doc-id", result.Metadata.Id);
+    }
+
+    [Fact]
+    public void Parse_WithConfigurationAndHttpClient_ProcessesCorrectly()
+    {
+        // Arrange
+        var testContent = "%PDF-1.4\ntest content";
+        var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
+        var metadata = new DocumentMetadata { Id = "test-doc-id", FilenameWithExtension = "test.pdf" };
+        
+        var configDict = new Dictionary<string, string?>
+        {
+            ["ChunkSize"] = "100",
+            ["ChunkOverlap"] = "10"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configDict)
+            .Build();
+        
+        var mockHttpClient = Substitute.For<HttpClient>();
+        var elasticsearchConfig = new ElasticsearchConfig
+        {
+            Uri = "http://test:9200",
+            IndexName = "test-index"
+        };
+
+        // Act
+        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, configuration, mockHttpClient, elasticsearchConfig);
+        
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("test-doc-id", result.Metadata.Id);
+        Assert.True(result.ChunkingStats.PageCount > 0);
     }
 
     private static SamplePayload ReadSamplePayload()

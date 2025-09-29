@@ -113,11 +113,110 @@ public class ProcessPdfRequestTests
         Assert.Equal("special-index", request.ElasticsearchConfig.IndexName);
     }
 
+    [Fact]
+    public void ProcessPdfRequest_WithIndexDocumentTrue_DeserializesCorrectly()
+    {
+        // Arrange & Act
+        var requestJson = @"{
+            ""fileContent"": ""base64-content"",
+            ""metadata"": {
+                ""filenameWithExtension"": ""test.pdf""
+            },
+            ""indexDocument"": true
+        }";
+
+        var request = JsonSerializer.Deserialize<TestProcessPdfRequest>(requestJson, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        // Assert
+        Assert.NotNull(request);
+        Assert.True(request.IndexDocument);
+    }
+
+    [Fact]
+    public void ProcessPdfRequest_WithIndexDocumentFalse_DeserializesCorrectly()
+    {
+        // Arrange & Act
+        var requestJson = @"{
+            ""fileContent"": ""base64-content"",
+            ""metadata"": {
+                ""filenameWithExtension"": ""test.pdf""
+            },
+            ""indexDocument"": false
+        }";
+
+        var request = JsonSerializer.Deserialize<TestProcessPdfRequest>(requestJson, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        // Assert
+        Assert.NotNull(request);
+        Assert.False(request.IndexDocument);
+    }
+
+    [Fact]
+    public void ProcessPdfRequest_WithoutIndexDocument_DefaultsToFalse()
+    {
+        // Arrange & Act
+        var requestJson = @"{
+            ""fileContent"": ""base64-content"",
+            ""metadata"": {
+                ""filenameWithExtension"": ""test.pdf""
+            }
+        }";
+
+        var request = JsonSerializer.Deserialize<TestProcessPdfRequest>(requestJson, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        // Assert
+        Assert.NotNull(request);
+        Assert.False(request.IndexDocument); // Should default to false
+    }
+
+    [Fact]
+    public void ProcessPdfRequest_WithIndexDocumentAndElasticsearchConfig_SerializesCorrectly()
+    {
+        // Arrange
+        var request = new TestProcessPdfRequest
+        {
+            FileContent = "base64-content",
+            Metadata = new DocumentMetadata
+            {
+                FilenameWithExtension = "test.pdf"
+            },
+            ElasticsearchConfig = new ElasticsearchConfig
+            {
+                Uri = "http://custom:9200",
+                IndexName = "custom-index"
+            },
+            IndexDocument = true
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+        });
+
+        // Assert
+        Assert.Contains("indexDocument", json);
+        Assert.Contains("true", json);
+        Assert.Contains("elasticsearchConfig", json);
+        Assert.Contains("http://custom:9200", json);
+        Assert.Contains("custom-index", json);
+    }
+
     // Test record matching the actual ProcessPdfRequest structure from ProcessPdfFunction.cs
     private sealed record TestProcessPdfRequest
     {
         public string? FileContent { get; init; }
         public DocumentMetadata? Metadata { get; init; }
         public ElasticsearchConfig? ElasticsearchConfig { get; init; }
+        public bool IndexDocument { get; init; } = false;
     }
 }

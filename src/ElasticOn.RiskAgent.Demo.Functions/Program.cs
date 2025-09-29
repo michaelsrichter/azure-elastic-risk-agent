@@ -13,4 +13,19 @@ builder.Services
     .ConfigureFunctionsApplicationInsights()
     .AddScoped<IElasticsearchService, ElasticsearchService>();
 
+// Configure HttpClient with proper SSL handling for development
+builder.Services.AddHttpClient("default")
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        
+        // For development environments, allow untrusted certificates
+        if (builder.Environment.IsDevelopment())
+        {
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
+        
+        return handler;
+    });
+
 builder.Build().Run();

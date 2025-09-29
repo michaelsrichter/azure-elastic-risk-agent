@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -19,11 +20,13 @@ public sealed class ProcessPdfFunction
 {
     private readonly ILogger<ProcessPdfFunction> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger, IConfiguration configuration)
+    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
         _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
     }
 
     [Function("ProcessPDF")]
@@ -68,7 +71,9 @@ public sealed class ProcessPdfFunction
         ProcessPdfData parsedData;
         try
         {
-            parsedData = ProcessPdfParser.Parse(payload.FileContent, payload.Metadata, _configuration);
+            // Use HttpClientFactory for indexing if indexDocument is true
+            var httpClientFactory = payload.IndexDocument ? _httpClientFactory : null;
+            parsedData = ProcessPdfParser.Parse(payload.FileContent, payload.Metadata, _configuration, httpClientFactory, payload.ElasticsearchConfig);
         }
         catch (FormatException ex)
         {
@@ -84,25 +89,33 @@ public sealed class ProcessPdfFunction
                 .ConfigureAwait(false);
         }
 
-        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}",
+        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}. Indexing: {IndexingEnabled}",
             parsedData.PdfBytes.Length,
-            parsedData.Metadata.Id);
+            parsedData.Metadata.Id,
+            payload.IndexDocument);
 
         var response = request.CreateResponse(HttpStatusCode.Accepted);
         await response.WriteAsJsonAsync(new
         {
-            message = "PDF accepted for processing.",
+            message = payload.IndexDocument ? "PDF accepted for processing and indexing." : "PDF accepted for processing.",
             size = parsedData.PdfBytes.Length,
             metadata = parsedData.Metadata,
+            indexingEnabled = payload.IndexDocument,
+            elasticsearchConfig = payload.ElasticsearchConfig != null ? new
+            {
+                hasCustomConfig = true,
+                indexName = payload.ElasticsearchConfig.IndexName,
+                uri = payload.ElasticsearchConfig.Uri
+            } : new { hasCustomConfig = false, indexName = (string?)null, uri = (string?)null },
             document = new
             {
                 parsedData.Metadata.Id,
                 parsedData.Metadata.FilenameWithExtension,
                 parsedData.Metadata.VersionNumber,
-                PageCount = parsedData.ChunkingStats.PageCount,
-                AverageChunksPerPage = parsedData.ChunkingStats.AverageChunksPerPage,
-                MaxChunksPerPage = parsedData.ChunkingStats.MaxChunksPerPage,
-                MinChunksPerPage = parsedData.ChunkingStats.MinChunksPerPage
+                parsedData.ChunkingStats.PageCount,
+                parsedData.ChunkingStats.AverageChunksPerPage,
+                parsedData.ChunkingStats.MaxChunksPerPage,
+                parsedData.ChunkingStats.MinChunksPerPage
             }
         }).ConfigureAwait(false);
 
@@ -129,5 +142,8 @@ public sealed class ProcessPdfFunction
 
         [JsonPropertyName("elasticsearchConfig")]
         public ElasticsearchConfig? ElasticsearchConfig { get; init; }
+
+        [JsonPropertyName("indexDocument")]
+        public bool IndexDocument { get; init; } = false;
     }
 }
