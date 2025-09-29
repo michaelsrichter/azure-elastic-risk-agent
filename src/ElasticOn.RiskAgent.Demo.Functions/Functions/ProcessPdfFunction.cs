@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Enums;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
@@ -17,10 +18,12 @@ namespace ElasticOn.RiskAgent.Demo.Functions;
 public sealed class ProcessPdfFunction
 {
     private readonly ILogger<ProcessPdfFunction> _logger;
+    private readonly IConfiguration _configuration;
 
-    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger)
+    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
     }
 
     [Function("ProcessPDF")]
@@ -65,7 +68,7 @@ public sealed class ProcessPdfFunction
         ProcessPdfData parsedData;
         try
         {
-            parsedData = ProcessPdfParser.Parse(payload.FileContent, payload.Metadata);
+            parsedData = ProcessPdfParser.Parse(payload.FileContent, payload.Metadata, _configuration);
         }
         catch (FormatException ex)
         {
@@ -96,8 +99,10 @@ public sealed class ProcessPdfFunction
                 parsedData.Metadata.Id,
                 parsedData.Metadata.FilenameWithExtension,
                 parsedData.Metadata.VersionNumber,
-                PageCount = parsedData.PageCount,
-                FirstPageText = parsedData.FirstPageText
+                PageCount = parsedData.ChunkingStats.PageCount,
+                AverageChunksPerPage = parsedData.ChunkingStats.AverageChunksPerPage,
+                MaxChunksPerPage = parsedData.ChunkingStats.MaxChunksPerPage,
+                MinChunksPerPage = parsedData.ChunkingStats.MinChunksPerPage
             }
         }).ConfigureAwait(false);
 

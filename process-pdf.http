@@ -20,6 +20,29 @@ Content-Type: application/json
   }
 }
 
+### Test ProcessPdfFunction with custom Elasticsearch configuration (full override)
+POST http://localhost:7071/api/process-pdf
+Content-Type: application/json
+
+{
+  "fileContent": "JVBERi0xLjQKMSAwIG9iao8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCgoyIDAgb2JqCjw8Ci9UeXBlIC9QYWdlcwovS2lkcyBbMyAwIFJdCi9Db3VudCAxCj4+CmVuZG9iagoKMyAwIG9iao8PAovVHlwZSAvUGFnZQovUGFyZW50IDIgMCBSCi9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCi9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKCjQgMCBvYmoKPDwKL0xlbmd0aCA0NAo+PgpzdHJlYW0KQlQKL0YxIDEyIFRmCjEwMCA3MDAgVGQKKFJpc2sgQXNzZXNzbWVudCBUZXN0IFBERikgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4gCjAwMDAwMDAwNTMgMDAwMDAgbiAKMDAwMDAwMDEwMCAwMDAwMCBuIAowMDAwMDAwMTc4IDAwMDAwIG4gCnRyYWlsZXIKPDwKL1NpemUgNQovUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKMjcyCiUlRU9G",
+  "metadata": {
+    "id": "custom-pdf-001",
+    "filenameWithExtension": "custom-report.pdf",
+    "fullPath": "Custom Risk Assessments/custom-report.pdf",
+    "versionNumber": "1.0",
+    "modified": "2025-08-22T18:25:42Z",
+    "created": "2025-08-22T18:25:42Z",
+    "link": "https://custom.sharepoint.com/sites/CustomSite/Custom%20Risk%20Assessments/custom-report.pdf"
+  },
+  "elasticsearchConfig": {
+    "uri": "http://custom-elasticsearch:9200",
+    "apiKey": "custom-api-key-67890",
+    "indexName": "custom-risk-documents"
+  }
+}
+
+
 ### Test ProcessPdfFunction with partial custom Elasticsearch configuration (only custom index)
 POST http://localhost:7071/api/process-pdf
 Content-Type: application/json

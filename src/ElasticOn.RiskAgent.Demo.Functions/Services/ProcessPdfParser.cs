@@ -1,11 +1,27 @@
 using ElasticOn.RiskAgent.Demo.Functions.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Services;
 
 internal static class ProcessPdfParser
 {
-
+    // Overload for backward compatibility with tests
     public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata)
+    {
+        // Create default configuration for testing
+        var configDict = new Dictionary<string, string?>
+        {
+            ["ChunkSize"] = "500",
+            ["ChunkOverlap"] = "50"
+        };
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configDict)
+            .Build();
+        
+        return Parse(fileContent, metadata, configuration);
+    }
+
+    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration)
     {
         if (string.IsNullOrWhiteSpace(fileContent))
         {
@@ -13,14 +29,21 @@ internal static class ProcessPdfParser
         }
 
         ArgumentNullException.ThrowIfNull(metadata);
+        ArgumentNullException.ThrowIfNull(configuration);
 
         byte[] pdfBytes = DecodeBase64(fileContent);
 
-        // Extract text from the PDF
-        string firstPageText = PdfTextExtractor.ExtractFirstPageText(pdfBytes);
-        int pageCount = PdfTextExtractor.GetPageCount(pdfBytes);
+        // Extract text from all pages of the PDF
+        string[] pageTexts = PdfTextExtractor.ExtractTextFromAllPages(pdfBytes);
 
-        return new ProcessPdfData(pdfBytes, metadata, firstPageText, pageCount);
+        // Get chunking configuration
+        int chunkSize = int.Parse(configuration["ChunkSize"] ?? "500");
+        int chunkOverlap = int.Parse(configuration["ChunkOverlap"] ?? "50");
+
+        // Perform text chunking and get statistics
+        ChunkingStats chunkingStats = TextChunkingService.ChunkPages(pageTexts, chunkSize, chunkOverlap);
+
+        return new ProcessPdfData(pdfBytes, metadata, chunkingStats);
     }
 
     private static byte[] DecodeBase64(string input)
@@ -48,5 +71,4 @@ internal static class ProcessPdfParser
 internal sealed record ProcessPdfData(
     byte[] PdfBytes, 
     DocumentMetadata Metadata, 
-    string FirstPageText, 
-    int PageCount);
+    ChunkingStats ChunkingStats);
