@@ -193,7 +193,41 @@ func start
 
 > `local.settings.json` contains only development defaults and is excluded from version control. Provide your own values as needed.
 
+## Azure Deployment
+
+This project includes Azure Developer CLI (azd) support for easy deployment to Azure Functions with Flex Consumption plan.
+
+### Quick Start
+
+1. **Setup Environment**: Run the automated setup script
+   ```bash
+   ./scripts/setup-azd-environment.sh
+   ```
+
+2. **Deploy to Azure**: Deploy infrastructure and application
+   ```bash
+   azd up
+   ```
+
+3. **Configure Elasticsearch**: Update your Elasticsearch connection details
+   ```bash
+   ./scripts/update-elasticsearch-secrets.sh
+   ```
+
+### What Gets Deployed
+
+- **Azure Functions App** (Flex Consumption plan)
+- **Azure OpenAI Service** with text-embedding-ada-002 model
+- **Application Insights** for monitoring and logging
+- **Storage Account** with managed identity authentication
+
+> **Note**: Azure Key Vault is not currently used due to Flex Consumption plan limitations.  
+> Secrets are stored directly in Function App settings. See [TODO_KEYVAULT_INTEGRATION.md](docs/TODO_KEYVAULT_INTEGRATION.md) for future plans.
+
+For detailed deployment instructions, see [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md).
+
 ## Next steps
 
 - Flesh out the Microsoft Agent Framework app in `ElasticOn.RiskAgent.Demo.Agent`.
 - Connect the function output to the agent workflow.
+- Scale the deployment for production workloads.

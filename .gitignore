@@ -269,3 +269,9 @@ __azurite_db_queue_extent__.json
 __azurite_db_table__.json
 __blobstorage__
 __queuestorage__
+.azure
+
+# Azure Developer CLI
+.env
+.azd/environments/
+*.parameters.json.bak

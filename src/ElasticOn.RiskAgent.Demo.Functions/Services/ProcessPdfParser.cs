@@ -172,14 +172,28 @@ internal static class ProcessPdfParser
             var websiteHostname = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
             var azureFunctionsEnvironment = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
             var aspnetcoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var internalFunctionKey = Environment.GetEnvironmentVariable("INTERNAL_FUNCTION_KEY");
             
             Console.WriteLine($"Environment variables - WEBSITE_HOSTNAME: {websiteHostname}, AZURE_FUNCTIONS_ENVIRONMENT: {azureFunctionsEnvironment}, ASPNETCORE_ENVIRONMENT: {aspnetcoreEnvironment}");
+            
+            string urlPath = "/api/index-document";
             
             if (!string.IsNullOrEmpty(websiteHostname) && !websiteHostname.Contains("localhost"))
             {
                 // Production Azure Functions environment
                 baseUrl = $"https://{websiteHostname}";
                 Console.WriteLine($"Using production base address: {baseUrl}");
+                
+                // Add function key for authentication in production
+                if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
+                {
+                    urlPath += $"?code={internalFunctionKey}";
+                    Console.WriteLine($"Added function key to URL for authentication");
+                }
+                else
+                {
+                    Console.WriteLine($"WARNING: INTERNAL_FUNCTION_KEY not configured - authentication may fail");
+                }
             }
             else
             {
@@ -188,8 +202,15 @@ internal static class ProcessPdfParser
                 Console.WriteLine($"Using local development base address: {baseUrl}");
             }
 
-            var fullUrl = $"{baseUrl}/api/index-document";
-            Console.WriteLine($"Calling IndexDocumentFunction at: {fullUrl}");
+            var fullUrl = $"{baseUrl}{urlPath}";
+            
+            // Hide key in logs if present
+            var logUrl = fullUrl;
+            if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
+            {
+                logUrl = fullUrl.Replace(internalFunctionKey, "***");
+            }
+            Console.WriteLine($"Calling IndexDocumentFunction at: {logUrl}");
             
             // Set base address if not already set, then use relative path
             if (httpClient.BaseAddress == null)
@@ -197,7 +218,7 @@ internal static class ProcessPdfParser
                 httpClient.BaseAddress = new Uri(baseUrl);
             }
             
-            var response = await httpClient.PostAsync("/api/index-document", content);
+            var response = await httpClient.PostAsync(urlPath, content);
             
             if (response.IsSuccessStatusCode)
             {
