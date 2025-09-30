@@ -33,12 +33,15 @@ internal sealed class IndexDocumentFunction
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "index-document")] HttpRequestData req,
         CancellationToken cancellationToken)
     {
-        _logger.LogInformation("IndexDocument function processing a request.");
+        _logger.LogInformation("IndexDocumentFunction started - Request received at {Timestamp}", DateTime.UtcNow);
+        _logger.LogInformation("Request Headers: {Headers}", string.Join(", ", req.Headers.Select(h => $"{h.Key}={string.Join(",", h.Value)}")));
 
         try
         {
             // Read and deserialize the request body
             var requestBody = await req.ReadAsStringAsync();
+            _logger.LogInformation("Request body length: {Length} characters", requestBody?.Length ?? 0);
+            
             if (string.IsNullOrEmpty(requestBody))
             {
                 _logger.LogWarning("Request body is empty");
@@ -47,6 +50,7 @@ internal sealed class IndexDocumentFunction
                 return badRequestResponse;
             }
 
+            _logger.LogDebug("Deserializing request body...");
             var indexRequest = JsonSerializer.Deserialize<IndexDocumentRequest>(requestBody, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -54,11 +58,17 @@ internal sealed class IndexDocumentFunction
 
             if (indexRequest?.DocumentMetadata == null)
             {
-                _logger.LogWarning("Invalid request: DocumentMetadata is required");
+                _logger.LogWarning("Invalid request: DocumentMetadata is required. Request: {RequestBody}", requestBody?.Substring(0, Math.Min(200, requestBody.Length)));
                 var badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
                 await badRequestResponse.WriteStringAsync("DocumentMetadata is required", cancellationToken);
                 return badRequestResponse;
             }
+
+            _logger.LogInformation("Request deserialized - DocumentId: {DocumentId}, Filename: {Filename}, PageNumber: {PageNumber}, ChunkNumber: {ChunkNumber}", 
+                indexRequest.DocumentMetadata.Id, 
+                indexRequest.DocumentMetadata.FilenameWithExtension,
+                indexRequest.PageNumber,
+                indexRequest.PageChunkNumber);
 
             if (string.IsNullOrEmpty(indexRequest.DocumentMetadata.FilenameWithExtension))
             {
@@ -69,15 +79,21 @@ internal sealed class IndexDocumentFunction
             }
 
             // Convert to Elasticsearch document
+            _logger.LogDebug("Converting to Elasticsearch document...");
             var elasticsearchDocument = ElasticsearchDocument.FromRequest(indexRequest);
 
-            _logger.LogInformation("Processing document with generated ID: {DocumentId}", elasticsearchDocument.Id);
+            _logger.LogInformation("Processing document with generated ID: {DocumentId}, Chunk length: {ChunkLength}, CustomConfig: {HasCustomConfig}", 
+                elasticsearchDocument.Id, 
+                elasticsearchDocument.Chunk?.Length ?? 0,
+                indexRequest.ElasticsearchConfig != null);
 
             // Index the document using custom config if provided, otherwise use default config
+            _logger.LogInformation("Calling Elasticsearch service to index document...");
             var success = await _elasticsearchService.IndexDocumentAsync(elasticsearchDocument, indexRequest.ElasticsearchConfig, cancellationToken);
 
             if (success)
             {
+                _logger.LogInformation("Document successfully indexed with ID: {DocumentId}", elasticsearchDocument.Id);
                 var successResponse = req.CreateResponse(HttpStatusCode.OK);
                 var responseData = new
                 {
@@ -90,7 +106,7 @@ internal sealed class IndexDocumentFunction
             }
             else
             {
-                _logger.LogError("Failed to index document");
+                _logger.LogError("Elasticsearch service returned false - Failed to index document with ID: {DocumentId}", elasticsearchDocument.Id);
                 var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
                 await errorResponse.WriteStringAsync("Failed to index document", cancellationToken);
                 return errorResponse;
@@ -98,16 +114,17 @@ internal sealed class IndexDocumentFunction
         }
         catch (JsonException ex)
         {
-            _logger.LogError(ex, "Invalid JSON in request body");
+            _logger.LogError(ex, "Invalid JSON in request body. Error: {ErrorMessage}", ex.Message);
             var badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
-            await badRequestResponse.WriteStringAsync("Invalid JSON format", cancellationToken);
+            await badRequestResponse.WriteStringAsync($"Invalid JSON format: {ex.Message}", cancellationToken);
             return badRequestResponse;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while processing the request");
+            _logger.LogError(ex, "An error occurred while processing the request. Type: {ExceptionType}, Message: {ErrorMessage}", 
+                ex.GetType().Name, ex.Message);
             var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
-            await errorResponse.WriteStringAsync("An internal error occurred", cancellationToken);
+            await errorResponse.WriteStringAsync($"An internal error occurred: {ex.Message}", cancellationToken);
             return errorResponse;
         }
     }

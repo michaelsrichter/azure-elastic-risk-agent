@@ -4,9 +4,26 @@
         "applicationInsights": {
             "samplingSettings": {
                 "isEnabled": true,
+                "maxTelemetryItemsPerSecond": 20,
                 "excludedTypes": "Request"
             },
-            "enableLiveMetricsFilters": true
+            "enableLiveMetricsFilters": true,
+            "enableDependencyTracking": true,
+            "enablePerformanceCountersCollection": true,
+            "httpAutoCollectionOptions": {
+                "enableHttpTriggerExtendedInfoCollection": true,
+                "enableW3CDistributedTracing": true,
+                "enableResponseHeaderInjection": true
+            }
+        },
+        "logLevel": {
+            "default": "Information",
+            "Host.Results": "Information",
+            "Function": "Information",
+            "Host.Aggregator": "Information",
+            "Microsoft": "Warning",
+            "Microsoft.Hosting.Lifetime": "Information",
+            "ElasticOn.RiskAgent.Demo.Functions": "Information"
         }
     },
     "extensionBundle": {

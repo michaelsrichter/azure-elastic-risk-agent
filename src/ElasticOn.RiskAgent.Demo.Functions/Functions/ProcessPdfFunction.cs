@@ -39,6 +39,8 @@ public sealed class ProcessPdfFunction
     public async Task<HttpResponseData> RunAsync(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = "process-pdf")] HttpRequestData request)
     {
+        _logger.LogInformation("ProcessPdfFunction started - Request received at {Timestamp}", DateTime.UtcNow);
+        
         string? body = await request.ReadAsStringAsync().ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(body))
         {
