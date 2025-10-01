@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Models;
 
-internal sealed record DocumentMetadata
+public sealed record DocumentMetadata
 {
     [JsonPropertyName("id")]
     public string Id { get; init; } = string.Empty;

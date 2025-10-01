@@ -1,9 +1,11 @@
 namespace ElasticOn.RiskAgent.Demo.Functions.Services;
 
 /// <summary>
-/// Service for chunking text with configurable chunk size and overlap
+/// Legacy service for chunking text with configurable chunk size and overlap.
+/// This is preserved for reference. Use ITextChunkingService/RecursiveTextChunkingService instead.
 /// </summary>
-internal static class TextChunkingService
+[Obsolete("Use ITextChunkingService with RecursiveTextChunkingService instead")]
+internal static class LegacyTextChunkingService
 {
     /// <summary>
     /// Chunks text into overlapping segments using an overlapping window approach
@@ -84,18 +86,3 @@ internal static class TextChunkingService
         return new ChunkingStats(pages.Length, chunksPerPage, averageChunksPerPage, maxChunksPerPage, minChunksPerPage);
     }
 }
-
-/// <summary>
-/// Statistics about text chunking results
-/// </summary>
-/// <param name="PageCount">Total number of pages processed</param>
-/// <param name="ChunksPerPage">Array containing the number of chunks for each page</param>
-/// <param name="AverageChunksPerPage">Average number of chunks per page</param>
-/// <param name="MaxChunksPerPage">Highest number of chunks on a single page</param>
-/// <param name="MinChunksPerPage">Smallest number of chunks on a single page</param>
-internal sealed record ChunkingStats(
-    int PageCount,
-    int[] ChunksPerPage,
-    double AverageChunksPerPage,
-    int MaxChunksPerPage,
-    int MinChunksPerPage);

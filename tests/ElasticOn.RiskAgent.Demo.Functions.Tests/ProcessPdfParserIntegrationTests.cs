@@ -26,6 +26,13 @@ public sealed class ProcessPdfParserIntegrationTests
             .Build();
     }
 
+    private static ProcessPdfParser CreateParser()
+    {
+        // Use the real RecursiveTextChunkingService for tests
+        var chunkingService = new RecursiveTextChunkingService();
+        return new ProcessPdfParser(chunkingService);
+    }
+
     [Fact]
     public async Task Parse_WithHttpClient_CallsIndexDocumentForEachChunk()
     {
@@ -53,7 +60,7 @@ public sealed class ProcessPdfParserIntegrationTests
         };
 
         // Act
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, _configuration, httpClient, elasticsearchConfig);
+        var result = CreateParser().Parse(validPdfBase64, metadata, _configuration, httpClient, elasticsearchConfig);
 
         // Give some time for the async indexing to complete
         await Task.Delay(500);
@@ -89,7 +96,7 @@ public sealed class ProcessPdfParserIntegrationTests
         };
 
         // Act
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, _configuration, httpClient);
+        var result = CreateParser().Parse(validPdfBase64, metadata, _configuration, httpClient);
 
         // Give time for async processing
         await Task.Delay(500);
@@ -145,7 +152,7 @@ public sealed class ProcessPdfParserIntegrationTests
         var httpClient = new HttpClient(faultyHttpMessageHandler);
 
         // Act & Assert - Should not throw even if HTTP calls fail
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, _configuration, httpClient);
+        var result = CreateParser().Parse(validPdfBase64, metadata, _configuration, httpClient);
         
         Assert.NotNull(result);
         Assert.Equal("error-test-doc", result.Metadata.Id);

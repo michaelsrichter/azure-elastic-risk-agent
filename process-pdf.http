@@ -1,6 +1,6 @@
 # http://localhost:7071/
 ### Test ProcessPdfFunction with custom Elasticsearch configuration (full override)
-POST https://azfunc7nnn24ozht26y.azurewebsites.net/api/process-pdf?code=y8Sil-HFK3tmZe7NrMPZiDrKLf7jWdw0tofIJjAmBFL-AzFuR-oyPQ==
+POST http://localhost:7071/api/process-pdf?code=y8Sil-HFK3tmZe7NrMPZiDrKLf7jWdw0tofIJjAmBFL-AzFuR-oyPQ==
 Content-Type: application/json
 
 {

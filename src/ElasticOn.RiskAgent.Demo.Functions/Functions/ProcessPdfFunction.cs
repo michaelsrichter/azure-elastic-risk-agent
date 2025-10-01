@@ -21,12 +21,14 @@ public sealed class ProcessPdfFunction
     private readonly ILogger<ProcessPdfFunction> _logger;
     private readonly IConfiguration _configuration;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ProcessPdfParser _pdfParser;
 
-    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+    public ProcessPdfFunction(ILogger<ProcessPdfFunction> logger, IConfiguration configuration, IHttpClientFactory httpClientFactory, ProcessPdfParser pdfParser)
     {
         _logger = logger;
         _configuration = configuration;
         _httpClientFactory = httpClientFactory;
+        _pdfParser = pdfParser;
     }
 
     [Function("ProcessPDF")]
@@ -75,7 +77,7 @@ public sealed class ProcessPdfFunction
         {
             // Use HttpClientFactory for indexing if indexDocument is true
             var httpClientFactory = payload.IndexDocument ? _httpClientFactory : null;
-            parsedData = ProcessPdfParser.Parse(payload.FileContent, payload.Metadata, _configuration, httpClientFactory, payload.ElasticsearchConfig);
+            parsedData = _pdfParser.Parse(payload.FileContent, payload.Metadata, _configuration, httpClientFactory, payload.ElasticsearchConfig);
         }
         catch (FormatException ex)
         {
@@ -115,9 +117,9 @@ public sealed class ProcessPdfFunction
                 parsedData.Metadata.FilenameWithExtension,
                 parsedData.Metadata.VersionNumber,
                 parsedData.ChunkingStats.PageCount,
-                parsedData.ChunkingStats.AverageChunksPerPage,
-                parsedData.ChunkingStats.MaxChunksPerPage,
-                parsedData.ChunkingStats.MinChunksPerPage
+                parsedData.ChunkingStats.AvgChunksPerPage,
+                parsedData.ChunkingStats.MaxChunksInPage,
+                parsedData.ChunkingStats.MinChunksInPage
             }
         }).ConfigureAwait(false);
 

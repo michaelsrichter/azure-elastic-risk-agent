@@ -6,10 +6,17 @@ using System.Net.Http;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Services;
 
-internal static class ProcessPdfParser
+public class ProcessPdfParser
 {
+    private readonly ITextChunkingService _chunkingService;
+
+    public ProcessPdfParser(ITextChunkingService chunkingService)
+    {
+        _chunkingService = chunkingService ?? throw new ArgumentNullException(nameof(chunkingService));
+    }
+
     // Overload for backward compatibility with tests
-    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata)
+    public ProcessPdfData Parse(string fileContent, DocumentMetadata metadata)
     {
         // Create default configuration for testing
         var configDict = new Dictionary<string, string?>
@@ -25,7 +32,7 @@ internal static class ProcessPdfParser
     }
 
     // Overload with HttpClient for backward compatibility with tests
-    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, HttpClient? httpClient)
+    public ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, HttpClient? httpClient)
     {
         // Create default configuration for testing
         var configDict = new Dictionary<string, string?>
@@ -40,17 +47,17 @@ internal static class ProcessPdfParser
         return Parse(fileContent, metadata, configuration, httpClient);
     }
 
-    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration)
+    public ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration)
     {
         return Parse(fileContent, metadata, configuration, httpClientFactory: null);
     }
 
-    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig = null)
+    public ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig = null)
     {
         return Parse(fileContent, metadata, configuration, httpClientFactory: null, elasticsearchConfig, httpClient);
     }
 
-    public static ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration, IHttpClientFactory? httpClientFactory, ElasticsearchConfig? elasticsearchConfig = null, HttpClient? httpClient = null)
+    public ProcessPdfData Parse(string fileContent, DocumentMetadata metadata, IConfiguration configuration, IHttpClientFactory? httpClientFactory, ElasticsearchConfig? elasticsearchConfig = null, HttpClient? httpClient = null)
     {
         if (string.IsNullOrWhiteSpace(fileContent))
         {
@@ -70,7 +77,7 @@ internal static class ProcessPdfParser
         int chunkOverlap = int.Parse(configuration["ChunkOverlap"] ?? "50");
 
         // Perform text chunking and get statistics
-        ChunkingStats chunkingStats = TextChunkingService.ChunkPages(pageTexts, chunkSize, chunkOverlap);
+        ChunkingStats chunkingStats = _chunkingService.ChunkPages(pageTexts, chunkSize, chunkOverlap);
 
         // Index chunks if HttpClientFactory or HttpClient is provided
         if (httpClientFactory != null || httpClient != null)
@@ -81,7 +88,7 @@ internal static class ProcessPdfParser
         return new ProcessPdfData(pdfBytes, metadata, chunkingStats);
     }
 
-    private static async Task IndexChunksAsync(string[] pageTexts, DocumentMetadata metadata, int chunkSize, int chunkOverlap, IHttpClientFactory? httpClientFactory, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig)
+    private async Task IndexChunksAsync(string[] pageTexts, DocumentMetadata metadata, int chunkSize, int chunkOverlap, IHttpClientFactory? httpClientFactory, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig)
     {
         try
         {
@@ -123,7 +130,7 @@ internal static class ProcessPdfParser
                 for (int pageIndex = 0; pageIndex < pageTexts.Length; pageIndex++)
                 {
                     var pageText = pageTexts[pageIndex];
-                    var chunks = TextChunkingService.ChunkText(pageText, chunkSize, chunkOverlap);
+                    var chunks = _chunkingService.ChunkText(pageText, chunkSize, chunkOverlap);
 
                     for (int chunkIndex = 0; chunkIndex < chunks.Length; chunkIndex++)
                     {
@@ -157,7 +164,7 @@ internal static class ProcessPdfParser
         }
     }
 
-    private static async Task CallIndexDocumentFunction(HttpClient httpClient, IndexDocumentRequest request)
+    private async Task CallIndexDocumentFunction(HttpClient httpClient, IndexDocumentRequest request)
     {
         try
         {
@@ -240,7 +247,7 @@ internal static class ProcessPdfParser
         }
     }
 
-    private static byte[] DecodeBase64(string input)
+    private byte[] DecodeBase64(string input)
     {
         string normalized = input.Trim();
 
@@ -262,7 +269,7 @@ internal static class ProcessPdfParser
     }
 }
 
-internal sealed record ProcessPdfData(
+public sealed record ProcessPdfData(
     byte[] PdfBytes, 
     DocumentMetadata Metadata, 
     ChunkingStats ChunkingStats);

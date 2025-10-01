@@ -19,12 +19,20 @@ public sealed class ProcessPdfParserTests
 {
     private static readonly string SampleRequestPath = Path.Combine(AppContext.BaseDirectory, "samplePdfFileRequest.json");
 
+    private static ProcessPdfParser CreateParser()
+    {
+        // Use the real RecursiveTextChunkingService for tests
+        var chunkingService = new RecursiveTextChunkingService();
+        return new ProcessPdfParser(chunkingService);
+    }
+
     [Fact]
     public void Parse_ReturnsPdfBytesWithReadableText()
     {
         var payload = ReadSamplePayload();
+        var parser = CreateParser();
 
-        var result = ProcessPdfParser.Parse(payload.FileContent!, payload.Metadata!);
+        var result = parser.Parse(payload.FileContent!, payload.Metadata!);
 
         // Verify PDF bytes were successfully decoded from Base64
         Assert.True(result.PdfBytes.Length > 0);
@@ -39,7 +47,7 @@ public sealed class ProcessPdfParserTests
     {
         var payload = ReadSamplePayload();
 
-        var result = ProcessPdfParser.Parse(payload.FileContent!, payload.Metadata!);
+        var result = CreateParser().Parse(payload.FileContent!, payload.Metadata!);
 
         Assert.NotEmpty(result.Metadata.Id);
         Assert.Equal("pub-2025-cybersecurity-report.pdf", result.Metadata.FilenameWithExtension);
@@ -52,7 +60,7 @@ public sealed class ProcessPdfParserTests
     {
         var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         var exception = Assert.Throws<ArgumentException>(() =>
-            ProcessPdfParser.Parse("", metadata));
+            CreateParser().Parse("", metadata));
         
         Assert.Contains("fileContent is required", exception.Message);
     }
@@ -62,7 +70,7 @@ public sealed class ProcessPdfParserTests
     {
         var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         var exception = Assert.Throws<ArgumentException>(() =>
-            ProcessPdfParser.Parse(null!, metadata));
+            CreateParser().Parse(null!, metadata));
         
         Assert.Contains("fileContent is required", exception.Message);
     }
@@ -73,7 +81,7 @@ public sealed class ProcessPdfParserTests
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes("%PDF-1.4 test"));
         
         var exception = Assert.Throws<ArgumentNullException>(() =>
-            ProcessPdfParser.Parse(validPdfBase64, null!));
+            CreateParser().Parse(validPdfBase64, null!));
         
         Assert.Contains("metadata", exception.Message);
     }
@@ -83,7 +91,7 @@ public sealed class ProcessPdfParserTests
     {
         var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
         Assert.Throws<FormatException>(() =>
-            ProcessPdfParser.Parse("invalid-base64!@#", metadata));
+            CreateParser().Parse("invalid-base64!@#", metadata));
     }
 
     [Fact]
@@ -93,7 +101,7 @@ public sealed class ProcessPdfParserTests
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
         var metadata = new DocumentMetadata { Id = "test-doc-id", VersionNumber = "1.0" };
         
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata);
+        var result = CreateParser().Parse(validPdfBase64, metadata);
         
         Assert.Equal(testContent.Length, result.PdfBytes.Length);
         Assert.Equal("test-doc-id", result.Metadata.Id);
@@ -110,7 +118,7 @@ public sealed class ProcessPdfParserTests
         var mockHttpClient = Substitute.For<HttpClient>();
 
         // Act & Assert - Should not throw
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, mockHttpClient);
+        var result = CreateParser().Parse(validPdfBase64, metadata, mockHttpClient);
         
         Assert.NotNull(result);
         Assert.Equal("test-doc-id", result.Metadata.Id);
@@ -125,7 +133,7 @@ public sealed class ProcessPdfParserTests
         var metadata = new DocumentMetadata { Id = "test-doc-id", FilenameWithExtension = "test.pdf" };
 
         // Act - Should not attempt any HTTP calls
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, httpClient: null);
+        var result = CreateParser().Parse(validPdfBase64, metadata, httpClient: null);
         
         // Assert - Should process normally without indexing
         Assert.NotNull(result);
@@ -157,7 +165,7 @@ public sealed class ProcessPdfParserTests
         };
 
         // Act
-        var result = ProcessPdfParser.Parse(validPdfBase64, metadata, configuration, mockHttpClient, elasticsearchConfig);
+        var result = CreateParser().Parse(validPdfBase64, metadata, configuration, mockHttpClient, elasticsearchConfig);
         
         // Assert
         Assert.NotNull(result);
@@ -187,6 +195,13 @@ public sealed class ProcessPdfFunctionLogicTests
     public ProcessPdfFunctionLogicTests()
     {
         _logger = Substitute.For<ILogger<ProcessPdfFunction>>();
+    }
+
+    private static ProcessPdfParser CreateParser()
+    {
+        // Use the real RecursiveTextChunkingService for tests
+        var chunkingService = new RecursiveTextChunkingService();
+        return new ProcessPdfParser(chunkingService);
     }
 
     [Theory]
@@ -258,7 +273,7 @@ public sealed class ProcessPdfFunctionLogicTests
         var validPdfBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(testContent));
         var metadata = new DocumentMetadata { Id = "test-doc", FilenameWithExtension = "test-doc.pdf" };
         
-        var parsedData = ProcessPdfParser.Parse(validPdfBase64, metadata);
+        var parsedData = CreateParser().Parse(validPdfBase64, metadata);
         LogProcessingInfo(_logger, parsedData);
         
         // Verify logging occurred with correct information
@@ -310,6 +325,13 @@ public sealed class ProcessPdfFunctionLogicTests
 public sealed class PdfTextExtractorTests
 {
     private static readonly string SampleRequestPath = Path.Combine(AppContext.BaseDirectory, "samplePdfFileRequest.json");
+
+    private static ProcessPdfParser CreateParser()
+    {
+        // Use the real RecursiveTextChunkingService for tests
+        var chunkingService = new RecursiveTextChunkingService();
+        return new ProcessPdfParser(chunkingService);
+    }
 
     [Fact]
     public void ExtractFirstPageText_WithSamplePdf_ReturnsText()
@@ -388,11 +410,11 @@ public sealed class PdfTextExtractorTests
         var metadata = new DocumentMetadata { Id = "test-id", FilenameWithExtension = "test.pdf" };
 
         // Act
-        var result = ProcessPdfParser.Parse(invalidPdfData, metadata);
+        var result = CreateParser().Parse(invalidPdfData, metadata);
         
         // Assert
         Assert.Equal(1, result.ChunkingStats.PageCount); // Invalid PDF returns one page with error message
-        Assert.True(result.ChunkingStats.MaxChunksPerPage >= 0); // Should have at least 0 chunks
+        Assert.True(result.ChunkingStats.MaxChunksInPage >= 0); // Should have at least 0 chunks
     }
 
     private static SamplePayload ReadSamplePayload()

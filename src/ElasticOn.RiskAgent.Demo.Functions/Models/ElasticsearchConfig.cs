@@ -6,7 +6,7 @@ namespace ElasticOn.RiskAgent.Demo.Functions.Models;
 /// Optional Elasticsearch configuration that can be provided in request payloads.
 /// If not provided, defaults from local.settings.json will be used.
 /// </summary>
-internal sealed record ElasticsearchConfig
+public sealed record ElasticsearchConfig
 {
     [JsonPropertyName("uri")]
     public string? Uri { get; init; }

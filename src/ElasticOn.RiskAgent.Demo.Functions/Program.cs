@@ -47,6 +47,14 @@ builder.Services.Configure<LoggerFilterOptions>(options =>
 builder.Services
     .AddScoped<IElasticsearchService, ElasticsearchService>();
 
+// Register text chunking service
+builder.Services
+    .AddSingleton<ITextChunkingService, RecursiveTextChunkingService>();
+
+// Register PDF parser service
+builder.Services
+    .AddScoped<ProcessPdfParser>();
+
 // Configure HttpClient with proper SSL handling for development
 builder.Services.AddHttpClient("default")
     .ConfigurePrimaryHttpMessageHandler(() =>
