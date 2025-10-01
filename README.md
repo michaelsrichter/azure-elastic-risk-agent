@@ -120,12 +120,16 @@ Content-Type: application/json
 
 ### Configuration
 
-The PDF processing function supports configurable text chunking parameters that can be set in `local.settings.json`:
+The PDF processing function supports the following configurable parameters that can be set in `local.settings.json`:
 
+#### Text Chunking Configuration
 - **ChunkSize** (default: 500) - Size of each text chunk in characters
 - **ChunkOverlap** (default: 50) - Number of characters to overlap between consecutive chunks
 
 Chunking with overlap helps maintain context across chunk boundaries, which is important for downstream processing like semantic search or LLM analysis.
+
+#### Function Integration Configuration
+- **IndexDocumentUrlPath** (default: "/api/index-document") - URL path for the IndexDocument function endpoint. Allows customization of the internal function URL used when ProcessPDF automatically indexes chunks.
 
 ### Elasticsearch Integration
 

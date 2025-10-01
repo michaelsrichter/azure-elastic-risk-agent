@@ -82,13 +82,13 @@ public class ProcessPdfParser
         // Index chunks if HttpClientFactory or HttpClient is provided
         if (httpClientFactory != null || httpClient != null)
         {
-            _ = Task.Run(async () => await IndexChunksAsync(pageTexts, metadata, chunkSize, chunkOverlap, httpClientFactory, httpClient, elasticsearchConfig));
+            _ = Task.Run(async () => await IndexChunksAsync(pageTexts, metadata, chunkSize, chunkOverlap, httpClientFactory, httpClient, elasticsearchConfig, configuration));
         }
 
         return new ProcessPdfData(pdfBytes, metadata, chunkingStats);
     }
 
-    private async Task IndexChunksAsync(string[] pageTexts, DocumentMetadata metadata, int chunkSize, int chunkOverlap, IHttpClientFactory? httpClientFactory, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig)
+    private async Task IndexChunksAsync(string[] pageTexts, DocumentMetadata metadata, int chunkSize, int chunkOverlap, IHttpClientFactory? httpClientFactory, HttpClient? httpClient, ElasticsearchConfig? elasticsearchConfig, IConfiguration configuration)
     {
         try
         {
@@ -143,7 +143,7 @@ public class ProcessPdfParser
                             ElasticsearchConfig = elasticsearchConfig
                         };
 
-                        await CallIndexDocumentFunction(clientToUse, indexRequest);
+                        await CallIndexDocumentFunction(clientToUse, indexRequest, configuration);
                     }
                 }
             }
@@ -164,7 +164,7 @@ public class ProcessPdfParser
         }
     }
 
-    private async Task CallIndexDocumentFunction(HttpClient httpClient, IndexDocumentRequest request)
+    private async Task CallIndexDocumentFunction(HttpClient httpClient, IndexDocumentRequest request, IConfiguration configuration)
     {
         try
         {
@@ -183,7 +183,8 @@ public class ProcessPdfParser
             
             Console.WriteLine($"Environment variables - WEBSITE_HOSTNAME: {websiteHostname}, AZURE_FUNCTIONS_ENVIRONMENT: {azureFunctionsEnvironment}, ASPNETCORE_ENVIRONMENT: {aspnetcoreEnvironment}");
             
-            string urlPath = "/api/index-document";
+            // Get URL path from configuration with fallback to default
+            string urlPath = configuration["IndexDocumentUrlPath"] ?? "/api/index-document";
             
             if (!string.IsNullOrEmpty(websiteHostname) && !websiteHostname.Contains("localhost"))
             {
