@@ -172,8 +172,15 @@ internal sealed class ElasticsearchService : IElasticsearchService
 
         _logger.LogInformation("Using custom Elasticsearch configuration - Uri: {Uri}, Index: {IndexName}", 
             customConfig.Uri ?? "default", customConfig.IndexName ?? "default");
+        
+        _logger.LogInformation("Fallback values from config - Uri: {FallbackUri}, Index: {FallbackIndex}", 
+            _elasticsearchUri, _indexName);
 
         var mergedConfig = customConfig.MergeWithFallbacks(_elasticsearchUri, _apiKey, _indexName);
+        
+        _logger.LogInformation("After merge - Uri: {MergedUri}, Index: {MergedIndex}", 
+            mergedConfig.Uri, mergedConfig.IndexName);
+        
         var client = CreateClientFromConfig(customConfig);
         var indexName = mergedConfig.IndexName!;
 

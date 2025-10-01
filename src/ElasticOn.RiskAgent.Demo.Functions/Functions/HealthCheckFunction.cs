@@ -30,7 +30,8 @@ public class HealthCheckFunction
             status = "healthy",
             timestamp = DateTime.UtcNow,
             message = "Function App is running. Check Application Insights for logs.",
-            logLevelsEmitted = new[] { "Trace", "Debug", "Information", "Warning" }
+            logLevelsEmitted = new[] { "Trace", "Debug", "Information", "Warning" },
+            version = "DEPLOY_VERSION_2025100119"  // This will help us verify deployments
         });
 
         _logger.LogInformation("HealthCheck - Response sent successfully");

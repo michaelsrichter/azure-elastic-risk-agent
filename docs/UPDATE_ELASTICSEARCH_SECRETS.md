@@ -197,7 +197,6 @@ sudo apt-get update && sudo apt-get install jq
 
 ## Related Scripts
 
-- `deploy-without-sas.sh` - Deploys the function app without SAS tokens
 - `verify-deployment.sh` - Verifies the function app deployment
 - `configure-function-key.sh` - Configures internal function keys
 - `setup-azd-environment.sh` - Sets up the Azure Developer CLI environment

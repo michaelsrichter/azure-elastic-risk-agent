@@ -220,24 +220,6 @@ This project includes Azure Developer CLI (azd) support for easy deployment to A
    ./scripts/update-elasticsearch-secrets.sh
    ```
 
-### Deployment with SAS Token Restrictions
-
-If your organization blocks SAS token-based storage access, use the alternative deployment method:
-
-```bash
-# 1. Provision infrastructure only
-azd provision
-
-# 2. Deploy without SAS tokens
-./scripts/deploy-without-sas.sh
-
-# 3. Configure post-deployment
-./scripts/configure-function-key.sh
-./scripts/update-elasticsearch-secrets.sh
-```
-
-See [DEPLOYMENT_WITHOUT_SAS.md](docs/DEPLOYMENT_WITHOUT_SAS.md) for detailed information.
-
 ### What Gets Deployed
 
 - **Azure Functions App** (Flex Consumption plan)

@@ -49,6 +49,10 @@ public sealed class ProcessPdfFunction
             return await CreateErrorResponseAsync(request, HttpStatusCode.BadRequest, "Request body is empty.")
                 .ConfigureAwait(false);
         }
+        
+        // Log if elasticsearchIndexName appears in the raw JSON
+        bool hasIndexNameInJson = body.Contains("elasticsearchIndexName", StringComparison.Ordinal);
+        _logger.LogInformation("Raw JSON contains 'elasticsearchIndexName': {HasIndexName}", hasIndexNameInJson);
 
         ProcessPdfRequest? payload;
         try
@@ -57,6 +61,18 @@ public sealed class ProcessPdfFunction
             {
                 PropertyNameCaseInsensitive = true
             });
+            
+            string indexNameValue = payload?.ElasticsearchIndexName ?? "NULL";
+            bool hasConfig = payload?.ElasticsearchConfig != null;
+            bool indexDoc = payload?.IndexDocument ?? false;
+            
+            _logger.LogInformation("DESERIALIZATION CHECK: ElasticsearchIndexName='{IndexName}' (IsNull:{IsNull}, IsEmpty:{IsEmpty}, IsWhitespace:{IsWhitespace}), HasElasticsearchConfig:{HasConfig}, IndexDocument:{IndexDoc}",
+                indexNameValue,
+                payload?.ElasticsearchIndexName == null,
+                string.IsNullOrEmpty(payload?.ElasticsearchIndexName),
+                string.IsNullOrWhiteSpace(payload?.ElasticsearchIndexName),
+                hasConfig,
+                indexDoc);
         }
         catch (JsonException ex)
         {
