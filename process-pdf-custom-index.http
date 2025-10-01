@@ -1,0 +1,49 @@
+### Process PDF with custom Elasticsearch Index Name (simple approach)
+POST http://localhost:7071/api/process-pdf
+Content-Type: application/json
+
+{
+  "fileContent": "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKFQwUDA2VTBSMEAIAQA5aQLVCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago0OAplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDMgMCBSIC9SZXNvdXJjZXMgNiAwIFIgL0NvbnRlbnRzIDQgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago2IDAgb2JqCjw8IC9Qcm9jU2V0IFsgL1BERiAvVGV4dCBdIC9Db2xvclNwYWNlIDw8IC9DczEgNyAwIFIgPj4gL0ZvbnQgPDwgL1RUMSA4IDAgUgo+PiA+PgplbmRvYmoKOSAwIG9iago8PCAvTGVuZ3RoIDEwIDAgUiAvTiAzIC9BbHRlcm5hdGUgL0RldmljZVJHQiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAGFVM9rE0EU/jZuqdAiCFprDrJ4kCJJWatoRdQ2/RFiawzbH7ZFkGQzSdZuNuvuJrWliOTi0SreRe2hB/+AHnrwZC9KhVpFKN6rKGKhFy3xzW5MtqXqwM5+8943731vdt8ADXLSNPWABOQNx1KiEWlsfEJq/IgAjqIJQTQlVdvsTiQGfwkw7xvRAGfvP0MAqLEQjbCAEESwWV3V9VbvBBlEKLFGQVNW9uNe3Lg9Q4p07mNMdRvT+4nZJIiKvGMrVwD+f8AzF4TkTlzOnJ8B/oMfXPXmrNK9z3fJMXJf1vzXmLDcHCYNLJLTOF1xT6bfNs1P7Pfv29U8hMu7QCn0fhXPNz5Lbxz5K5xNO9KdPbXfKxLF/+vRt0aJF/+d2Q+6mDGqgQ5yQV/+f4n1nGjpf+b1K5gfz5zXn2gx2njK5Y4qL5x5v+Qe5jzQ5GH5pCJ+hKVlrT/P+zr8F+w3KKTv0H4QEp7h+P+vYl0YXEm1bTJq+xhJKwH9RwT0QeKEjx3w4L0HcCrOF+P+5Kb0cCHoQgzA3H5nPXlB1zJPqf9vZ5nnPP+DH0Hp7kD",
+  "metadata": {
+    "id": "test-doc-custom-index-001",
+    "filenameWithExtension": "test-custom-index.pdf",
+    "versionNumber": "1.0"
+  },
+  "elasticsearchIndexName": "my-custom-index-name",
+  "indexDocument": true
+}
+
+### Process PDF with full Elasticsearch Config (existing approach)
+POST http://localhost:7071/api/process-pdf
+Content-Type: application/json
+
+{
+  "fileContent": "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKFQwUDA2VTBSMEAIAQA5aQLVCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago0OAplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDMgMCBSIC9SZXNvdXJjZXMgNiAwIFIgL0NvbnRlbnRzIDQgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago2IDAgb2JqCjw8IC9Qcm9jU2V0IFsgL1BERiAvVGV4dCBdIC9Db2xvclNwYWNlIDw8IC9DczEgNyAwIFIgPj4gL0ZvbnQgPDwgL1RUMSA4IDAgUgo+PiA+PgplbmRvYmoKOSAwIG9iago8PCAvTGVuZ3RoIDEwIDAgUiAvTiAzIC9BbHRlcm5hdGUgL0RldmljZVJHQiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAGFVM9rE0EU/jZuqdAiCFprDrJ4kCJJWatoRdQ2/RFiawzbH7ZFkGQzSdZuNuvuJrWliOTi0SreRe2hB/+AHnrwZC9KhVpFKN6rKGKhFy3xzW5MtqXqwM5+8943731vdt8ADXLSNPWABOQNx1KiEWlsfEJq/IgAjqIJQTQlVdvsTiQGfwkw7xvRAGfvP0MAqLEQjbCAEESwWV3V9VbvBBlEKLFGQVNW9uNe3Lg9Q4p07mNMdRvT+4nZJIiKvGMrVwD+f8AzF4TkTlzOnJ8B/oMfXPXmrNK9z3fJMXJf1vzXmLDcHCYNLJLTOF1xT6bfNs1P7Pfv29U8hMu7QCn0fhXPNz5Lbxz5K5xNO9KdPbXfKxLF/+vRt0aJF/+d2Q+6mDGqgQ5yQV/+f4n1nGjpf+b1K5gfz5zXn2gx2njK5Y4qL5x5v+Qe5jzQ5GH5pCJ+hKVlrT/P+zr8F+w3KKTv0H4QEp7h+P+vYl0YXEm1bTJq+xhJKwH9RwT0QeKEjx3w4L0HcCrOF+P+5Kb0cCHoQgzA3H5nPXlB1zJPqf9vZ5nnPP+DH0Hp7kD",
+  "metadata": {
+    "id": "test-doc-full-config-001",
+    "filenameWithExtension": "test-full-config.pdf",
+    "versionNumber": "1.0"
+  },
+  "elasticsearchConfig": {
+    "indexName": "another-custom-index"
+  },
+  "indexDocument": true
+}
+
+### Process PDF with both elasticsearchIndexName and elasticsearchConfig (elasticsearchIndexName takes precedence)
+POST http://localhost:7071/api/process-pdf
+Content-Type: application/json
+
+{
+  "fileContent": "JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKFQwUDA2VTBSMEAIAQA5aQLVCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago0OAplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDMgMCBSIC9SZXNvdXJjZXMgNiAwIFIgL0NvbnRlbnRzIDQgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdCj4+CmVuZG9iago2IDAgb2JqCjw8IC9Qcm9jU2V0IFsgL1BERiAvVGV4dCBdIC9Db2xvclNwYWNlIDw8IC9DczEgNyAwIFIgPj4gL0ZvbnQgPDwgL1RUMSA4IDAgUgo+PiA+PgplbmRvYmoKOSAwIG9iago8PCAvTGVuZ3RoIDEwIDAgUiAvTiAzIC9BbHRlcm5hdGUgL0RldmljZVJHQiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAGFVM9rE0EU/jZuqdAiCFprDrJ4kCJJWatoRdQ2/RFiawzbH7ZFkGQzSdZuNuvuJrWliOTi0SreRe2hB/+AHnrwZC9KhVpFKN6rKGKhFy3xzW5MtqXqwM5+8943731vdt8ADXLSNPWABOQNx1KiEWlsfEJq/IgAjqIJQTQlVdvsTiQGfwkw7xvRAGfvP0MAqLEQjbCAEESwWV3V9VbvBBlEKLFGQVNW9uNe3Lg9Q4p07mNMdRvT+4nZJIiKvGMrVwD+f8AzF4TkTlzOnJ8B/oMfXPXmrNK9z3fJMXJf1vzXmLDcHCYNLJLTOF1xT6bfNs1P7Pfv29U8hMu7QCn0fhXPNz5Lbxz5K5xNO9KdPbXfKxLF/+vRt0aJF/+d2Q+6mDGqgQ5yQV/+f4n1nGjpf+b1K5gfz5zXn2gx2njK5Y4qL5x5v+Qe5jzQ5GH5pCJ+hKVlrT/P+zr8F+w3KKTv0H4QEp7h+P+vYl0YXEm1bTJq+xhJKwH9RwT0QeKEjx3w4L0HcCrOF+P+5Kb0cCHoQgzA3H5nPXlB1zJPqf9vZ5nnPP+DH0Hp7kD",
+  "metadata": {
+    "id": "test-doc-precedence-001",
+    "filenameWithExtension": "test-precedence.pdf",
+    "versionNumber": "1.0"
+  },
+  "elasticsearchIndexName": "priority-index-name",
+  "elasticsearchConfig": {
+    "indexName": "this-will-be-overridden"
+  },
+  "indexDocument": true
+}

@@ -75,9 +75,22 @@ public sealed class ProcessPdfFunction
         ProcessPdfData parsedData;
         try
         {
+            // Merge ElasticsearchIndexName into ElasticsearchConfig if provided
+            ElasticsearchConfig? effectiveConfig = payload.ElasticsearchConfig;
+            if (!string.IsNullOrWhiteSpace(payload.ElasticsearchIndexName))
+            {
+                // Create or update config with the custom index name
+                effectiveConfig = new ElasticsearchConfig
+                {
+                    Uri = payload.ElasticsearchConfig?.Uri,
+                    ApiKey = payload.ElasticsearchConfig?.ApiKey,
+                    IndexName = payload.ElasticsearchIndexName
+                };
+            }
+
             // Use HttpClientFactory for indexing if indexDocument is true
             var httpClientFactory = payload.IndexDocument ? _httpClientFactory : null;
-            parsedData = _pdfParser.Parse(payload.FileContent, payload.Metadata, _configuration, httpClientFactory, payload.ElasticsearchConfig);
+            parsedData = _pdfParser.Parse(payload.FileContent, payload.Metadata, _configuration, httpClientFactory, effectiveConfig);
         }
         catch (FormatException ex)
         {
@@ -93,10 +106,15 @@ public sealed class ProcessPdfFunction
                 .ConfigureAwait(false);
         }
 
-        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}. Indexing: {IndexingEnabled}",
+        // Determine the effective index name for logging and response
+        string? effectiveIndexName = payload.ElasticsearchIndexName 
+            ?? payload.ElasticsearchConfig?.IndexName;
+
+        _logger.LogInformation("ProcessPDF invoked with payload size {ByteCount} bytes and metadata for document {DocumentId}. Indexing: {IndexingEnabled}, IndexName: {IndexName}",
             parsedData.PdfBytes.Length,
             parsedData.Metadata.Id,
-            payload.IndexDocument);
+            payload.IndexDocument,
+            effectiveIndexName ?? "default");
 
         var response = request.CreateResponse(HttpStatusCode.Accepted);
         await response.WriteAsJsonAsync(new
@@ -105,11 +123,11 @@ public sealed class ProcessPdfFunction
             size = parsedData.PdfBytes.Length,
             metadata = parsedData.Metadata,
             indexingEnabled = payload.IndexDocument,
-            elasticsearchConfig = payload.ElasticsearchConfig != null ? new
+            elasticsearchConfig = (payload.ElasticsearchConfig != null || !string.IsNullOrWhiteSpace(payload.ElasticsearchIndexName)) ? new
             {
                 hasCustomConfig = true,
-                indexName = payload.ElasticsearchConfig.IndexName,
-                uri = payload.ElasticsearchConfig.Uri
+                indexName = effectiveIndexName,
+                uri = payload.ElasticsearchConfig?.Uri
             } : new { hasCustomConfig = false, indexName = (string?)null, uri = (string?)null },
             document = new
             {
@@ -146,6 +164,9 @@ public sealed class ProcessPdfFunction
 
         [JsonPropertyName("elasticsearchConfig")]
         public ElasticsearchConfig? ElasticsearchConfig { get; init; }
+
+        [JsonPropertyName("elasticsearchIndexName")]
+        public string? ElasticsearchIndexName { get; init; }
 
         [JsonPropertyName("indexDocument")]
         public bool IndexDocument { get; init; } = false;
