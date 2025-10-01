@@ -18,12 +18,91 @@ if [ -z "$FUNCTION_APP_NAME" ] || [ -z "$RESOURCE_GROUP" ]; then
     exit 1
 fi
 
-echo "🔍 Found Function App: $FUNCTION_APP_NAME in Resource Group: $RESOURCE_GROUP"
+echo "🔍 Found Function App: $FUNCTION_APP_NAME in Resource Group: $RESOURCE_GROUP_NAME"
 echo ""
 
-# Prompt for Elasticsearch configuration
-read -p "📝 Enter your Elasticsearch URI (e.g., https://your-cluster.es.eastus.azure.elastic.cloud:443): " ELASTICSEARCH_URI
-read -p "📝 Enter your Elasticsearch API Key: " ELASTICSEARCH_API_KEY
+# Check if local.settings.json exists
+LOCAL_SETTINGS_FILE="src/ElasticOn.RiskAgent.Demo.Functions/local.settings.json"
+USE_LOCAL_SETTINGS=false
+
+if [ -f "$LOCAL_SETTINGS_FILE" ]; then
+    echo "📖 Found local.settings.json with configuration values"
+    echo ""
+    echo "Would you like to:"
+    echo "  1) Use values from local.settings.json (default)"
+    echo "  2) Manually configure values (e.g., for production)"
+    echo ""
+    read -p "Enter your choice (1 or 2) [1]: " CHOICE
+    CHOICE=${CHOICE:-1}
+    echo ""
+    
+    if [ "$CHOICE" = "1" ]; then
+        USE_LOCAL_SETTINGS=true
+        echo "📖 Reading configuration from local.settings.json..."
+        
+        ELASTICSEARCH_URI=$(jq -r '.Values.ElasticsearchUri // empty' "$LOCAL_SETTINGS_FILE")
+        ELASTICSEARCH_API_KEY=$(jq -r '.Values.ElasticsearchApiKey // empty' "$LOCAL_SETTINGS_FILE")
+        ELASTICSEARCH_INDEX_NAME=$(jq -r '.Values.ElasticsearchIndexName // empty' "$LOCAL_SETTINGS_FILE")
+        AZURE_OPENAI_INFERENCE_ID=$(jq -r '.Values.AzureOpenAiInferenceId // empty' "$LOCAL_SETTINGS_FILE")
+        
+        [ -n "$ELASTICSEARCH_URI" ] && echo "   ✓ Found ElasticsearchUri: $ELASTICSEARCH_URI"
+        [ -n "$ELASTICSEARCH_API_KEY" ] && echo "   ✓ Found ElasticsearchApiKey: [HIDDEN]"
+        [ -n "$ELASTICSEARCH_INDEX_NAME" ] && echo "   ✓ Found ElasticsearchIndexName: $ELASTICSEARCH_INDEX_NAME"
+        [ -n "$AZURE_OPENAI_INFERENCE_ID" ] && echo "   ✓ Found AzureOpenAiInferenceId: $AZURE_OPENAI_INFERENCE_ID"
+        echo ""
+    else
+        echo "📝 Manual configuration mode selected"
+        echo ""
+    fi
+fi
+
+# Check if local.settings.json exists and read values from it
+LOCAL_SETTINGS_FILE="src/ElasticOn.RiskAgent.Demo.Functions/local.settings.json"
+
+if [ -f "$LOCAL_SETTINGS_FILE" ]; then
+    echo "📖 Reading configuration from local.settings.json..."
+    
+    # Read values from local.settings.json using jq
+    ELASTICSEARCH_URI=$(jq -r '.Values.ElasticsearchUri // empty' "$LOCAL_SETTINGS_FILE")
+    ELASTICSEARCH_API_KEY=$(jq -r '.Values.ElasticsearchApiKey // empty' "$LOCAL_SETTINGS_FILE")
+    ELASTICSEARCH_INDEX_NAME=$(jq -r '.Values.ElasticsearchIndexName // empty' "$LOCAL_SETTINGS_FILE")
+    AZURE_OPENAI_INFERENCE_ID=$(jq -r '.Values.AzureOpenAiInferenceId // empty' "$LOCAL_SETTINGS_FILE")
+    
+    if [ -n "$ELASTICSEARCH_URI" ]; then
+        echo "   ✓ Found ElasticsearchUri: $ELASTICSEARCH_URI"
+    fi
+    if [ -n "$ELASTICSEARCH_API_KEY" ]; then
+        echo "   ✓ Found ElasticsearchApiKey: [HIDDEN]"
+    fi
+    if [ -n "$ELASTICSEARCH_INDEX_NAME" ]; then
+        echo "   ✓ Found ElasticsearchIndexName: $ELASTICSEARCH_INDEX_NAME"
+    fi
+    if [ -n "$AZURE_OPENAI_INFERENCE_ID" ]; then
+        echo "   ✓ Found AzureOpenAiInferenceId: $AZURE_OPENAI_INFERENCE_ID"
+    fi
+    echo ""
+else
+    echo "⚠️  local.settings.json not found at $LOCAL_SETTINGS_FILE"
+    echo ""
+fi
+
+# Prompt for values if not using local settings or if values are missing
+if [ "$USE_LOCAL_SETTINGS" = false ] || [ -z "$ELASTICSEARCH_URI" ]; then
+    read -p "Enter Elasticsearch URI (e.g., https://your-deployment.es.region.gcp.elastic.cloud:443): " ELASTICSEARCH_URI
+fi
+
+if [ "$USE_LOCAL_SETTINGS" = false ] || [ -z "$ELASTICSEARCH_API_KEY" ]; then
+    read -sp "Enter Elasticsearch API Key: " ELASTICSEARCH_API_KEY
+    echo ""
+fi
+
+if [ "$USE_LOCAL_SETTINGS" = false ] || [ -z "$ELASTICSEARCH_INDEX_NAME" ]; then
+    read -p "Enter Elasticsearch Index Name (e.g., risk-agent-documents): " ELASTICSEARCH_INDEX_NAME
+fi
+
+if [ "$USE_LOCAL_SETTINGS" = false ] || [ -z "$AZURE_OPENAI_INFERENCE_ID" ]; then
+    read -p "Enter Azure OpenAI Inference ID (or press Enter to skip): " AZURE_OPENAI_INFERENCE_ID
+fi
 
 if [ -z "$ELASTICSEARCH_URI" ] || [ -z "$ELASTICSEARCH_API_KEY" ]; then
     echo "❌ Error: Both Elasticsearch URI and API Key are required"
@@ -33,13 +112,23 @@ fi
 echo ""
 echo "🔧 Updating Function App settings..."
 
+# Build the settings array
+SETTINGS=(
+    "ElasticsearchUri=$ELASTICSEARCH_URI"
+    "ElasticsearchApiKey=$ELASTICSEARCH_API_KEY"
+    "ElasticsearchIndexName=$ELASTICSEARCH_INDEX_NAME"
+)
+
+# Add AzureOpenAiInferenceId if it was found in local.settings.json
+if [ -n "$AZURE_OPENAI_INFERENCE_ID" ]; then
+    SETTINGS+=("AzureOpenAiInferenceId=$AZURE_OPENAI_INFERENCE_ID")
+fi
+
 # Update Function App settings directly (no Key Vault)
 az functionapp config appsettings set \
     --name "$FUNCTION_APP_NAME" \
     --resource-group "$RESOURCE_GROUP" \
-    --settings \
-        "ElasticsearchUri=$ELASTICSEARCH_URI" \
-        "ElasticsearchApiKey=$ELASTICSEARCH_API_KEY" \
+    --settings "${SETTINGS[@]}" \
     --output none
 
 echo "✅ Function App settings updated"
@@ -51,8 +140,11 @@ echo "✅ Function App restarted"
 echo ""
 echo "📝 Your Function App is now configured with:"
 echo "   • Elasticsearch URI: $ELASTICSEARCH_URI"
-echo "   • API Key: [HIDDEN]"
-echo "   • Index Name: risk-agent-documents-v2 (configurable in Function App settings)"
+echo "   • Elasticsearch API Key: [HIDDEN]"
+echo "   • Elasticsearch Index Name: $ELASTICSEARCH_INDEX_NAME"
+if [ -n "$AZURE_OPENAI_INFERENCE_ID" ]; then
+    echo "   • Azure OpenAI Inference ID: $AZURE_OPENAI_INFERENCE_ID"
+fi
 echo ""
 echo "🔄 The Function App may take a few minutes to pick up the new configuration."
 echo "   You can monitor logs in Azure Portal or using 'azd monitor'."
