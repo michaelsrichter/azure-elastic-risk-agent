@@ -166,84 +166,142 @@ public class ProcessPdfParser
 
     private async Task CallIndexDocumentFunction(HttpClient httpClient, IndexDocumentRequest request, IConfiguration configuration)
     {
-        try
-        {
-            var json = JsonSerializer.Serialize(request, new JsonSerializerOptions 
-            { 
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
-            });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+        // Get retry configuration with defaults
+        int maxRetries = int.Parse(configuration["IndexDocumentMaxRetries"] ?? "3");
+        int initialDelayMs = int.Parse(configuration["IndexDocumentInitialRetryDelayMs"] ?? "1000");
+        
+        var json = JsonSerializer.Serialize(request, new JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+        });
 
-            // Always use HTTP for local development to avoid SSL issues
-            string baseUrl;
-            var websiteHostname = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
-            var azureFunctionsEnvironment = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
-            var aspnetcoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var internalFunctionKey = Environment.GetEnvironmentVariable("INTERNAL_FUNCTION_KEY");
+        // Always use HTTP for local development to avoid SSL issues
+        string baseUrl;
+        var websiteHostname = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
+        var azureFunctionsEnvironment = Environment.GetEnvironmentVariable("AZURE_FUNCTIONS_ENVIRONMENT");
+        var aspnetcoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var internalFunctionKey = Environment.GetEnvironmentVariable("INTERNAL_FUNCTION_KEY");
+        
+        Console.WriteLine($"Environment variables - WEBSITE_HOSTNAME: {websiteHostname}, AZURE_FUNCTIONS_ENVIRONMENT: {azureFunctionsEnvironment}, ASPNETCORE_ENVIRONMENT: {aspnetcoreEnvironment}");
+        
+        // Get URL path from configuration with fallback to default
+        string urlPath = configuration["IndexDocumentUrlPath"] ?? "/api/index-document";
+        
+        if (!string.IsNullOrEmpty(websiteHostname) && !websiteHostname.Contains("localhost"))
+        {
+            // Production Azure Functions environment
+            baseUrl = $"https://{websiteHostname}";
+            Console.WriteLine($"Using production base address: {baseUrl}");
             
-            Console.WriteLine($"Environment variables - WEBSITE_HOSTNAME: {websiteHostname}, AZURE_FUNCTIONS_ENVIRONMENT: {azureFunctionsEnvironment}, ASPNETCORE_ENVIRONMENT: {aspnetcoreEnvironment}");
-            
-            // Get URL path from configuration with fallback to default
-            string urlPath = configuration["IndexDocumentUrlPath"] ?? "/api/index-document";
-            
-            if (!string.IsNullOrEmpty(websiteHostname) && !websiteHostname.Contains("localhost"))
+            // Add function key for authentication in production
+            if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
             {
-                // Production Azure Functions environment
-                baseUrl = $"https://{websiteHostname}";
-                Console.WriteLine($"Using production base address: {baseUrl}");
+                urlPath += $"?code={internalFunctionKey}";
+                Console.WriteLine($"Added function key to URL for authentication");
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: INTERNAL_FUNCTION_KEY not configured - authentication may fail");
+            }
+        }
+        else
+        {
+            // Local development - always use HTTP, never HTTPS
+            baseUrl = "http://localhost:7071";
+            Console.WriteLine($"Using local development base address: {baseUrl}");
+        }
+
+        var fullUrl = $"{baseUrl}{urlPath}";
+        
+        // Hide key in logs if present
+        var logUrl = fullUrl;
+        if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
+        {
+            logUrl = fullUrl.Replace(internalFunctionKey, "***");
+        }
+        
+        // Set base address if not already set, then use relative path
+        if (httpClient.BaseAddress == null)
+        {
+            httpClient.BaseAddress = new Uri(baseUrl);
+        }
+
+        // Retry loop with exponential backoff
+        int attempt = 0;
+        Exception? lastException = null;
+        
+        while (attempt <= maxRetries)
+        {
+            try
+            {
+                attempt++;
                 
-                // Add function key for authentication in production
-                if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
+                if (attempt > 1)
                 {
-                    urlPath += $"?code={internalFunctionKey}";
-                    Console.WriteLine($"Added function key to URL for authentication");
+                    Console.WriteLine($"Retry attempt {attempt} of {maxRetries + 1} for document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
                 }
                 else
                 {
-                    Console.WriteLine($"WARNING: INTERNAL_FUNCTION_KEY not configured - authentication may fail");
+                    Console.WriteLine($"Calling IndexDocumentFunction at: {logUrl}");
+                }
+                
+                // Create fresh content for each attempt
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await httpClient.PostAsync(urlPath, content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    if (attempt > 1)
+                    {
+                        Console.WriteLine($"Successfully indexed chunk after {attempt} attempts for document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Successfully indexed chunk for document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
+                    }
+                    return; // Success - exit retry loop
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    var errorMessage = $"Failed to index chunk: {response.StatusCode} - {errorContent}";
+                    Console.WriteLine(errorMessage);
+                    
+                    // Check if this is a retryable error (5xx server errors or 429 rate limit)
+                    bool isRetryable = ((int)response.StatusCode >= 500 && (int)response.StatusCode < 600) || 
+                                      response.StatusCode == System.Net.HttpStatusCode.TooManyRequests;
+                    
+                    if (!isRetryable || attempt > maxRetries)
+                    {
+                        Console.WriteLine($"Non-retryable error or max retries exceeded. Giving up on document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
+                        return; // Non-retryable error or out of retries
+                    }
+                    
+                    // Wait before retry with exponential backoff
+                    int delayMs = initialDelayMs * (int)Math.Pow(2, attempt - 1);
+                    Console.WriteLine($"Waiting {delayMs}ms before retry...");
+                    await Task.Delay(delayMs);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                // Local development - always use HTTP, never HTTPS
-                baseUrl = "http://localhost:7071";
-                Console.WriteLine($"Using local development base address: {baseUrl}");
-            }
-
-            var fullUrl = $"{baseUrl}{urlPath}";
-            
-            // Hide key in logs if present
-            var logUrl = fullUrl;
-            if (!string.IsNullOrEmpty(internalFunctionKey) && internalFunctionKey != "placeholder-will-be-updated-after-deployment")
-            {
-                logUrl = fullUrl.Replace(internalFunctionKey, "***");
-            }
-            Console.WriteLine($"Calling IndexDocumentFunction at: {logUrl}");
-            
-            // Set base address if not already set, then use relative path
-            if (httpClient.BaseAddress == null)
-            {
-                httpClient.BaseAddress = new Uri(baseUrl);
-            }
-            
-            var response = await httpClient.PostAsync(urlPath, content);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                Console.WriteLine($"Successfully indexed chunk for document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
-            }
-            else
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Failed to index chunk: {response.StatusCode} - {errorContent}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error calling IndexDocumentFunction: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                lastException = ex;
+                Console.WriteLine($"Error calling IndexDocumentFunction (attempt {attempt}): {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                if (attempt > maxRetries)
+                {
+                    Console.WriteLine($"Max retries exceeded. Giving up on document {request.DocumentMetadata.Id}, page {request.PageNumber}, chunk {request.PageChunkNumber}");
+                    return;
+                }
+                
+                // Wait before retry with exponential backoff
+                int delayMs = initialDelayMs * (int)Math.Pow(2, attempt - 1);
+                Console.WriteLine($"Waiting {delayMs}ms before retry...");
+                await Task.Delay(delayMs);
             }
         }
     }

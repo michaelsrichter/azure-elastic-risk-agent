@@ -130,6 +130,8 @@ Chunking with overlap helps maintain context across chunk boundaries, which is i
 
 #### Function Integration Configuration
 - **IndexDocumentUrlPath** (default: "/api/index-document") - URL path for the IndexDocument function endpoint. Allows customization of the internal function URL used when ProcessPDF automatically indexes chunks.
+- **IndexDocumentMaxRetries** (default: 3) - Maximum number of retry attempts when calling IndexDocument fails due to transient errors. Retries are performed for 5xx server errors and 429 rate limit responses.
+- **IndexDocumentInitialRetryDelayMs** (default: 1000) - Initial delay in milliseconds before the first retry. Subsequent retries use exponential backoff (delay doubles with each attempt).
 
 ### Elasticsearch Integration
 
