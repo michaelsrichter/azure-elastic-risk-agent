@@ -36,8 +36,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     accessTier: 'Hot'
     allowBlobPublicAccess: false
+    // Note: allowSharedKeyAccess must be true for azd deploy to work with organizational policies
+    // The function app itself uses managed identity for runtime access via AzureWebJobsStorage__credential
+    allowSharedKeyAccess: true
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
+    // Network rules to allow Azure services (required for deployment)
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
+    }
   }
 }
 
