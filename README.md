@@ -228,6 +228,31 @@ This project includes Azure Developer CLI (azd) support for easy deployment to A
    ./scripts/update-elasticsearch-secrets.sh
    ```
 
+### Deployment with Restricted Storage Access
+
+If your organization has policies that disable public network access to storage accounts, the standard `azd deploy` command will fail with:
+
+```
+ERROR: failed deploying service 'api': publishing zip file: deployment failed: 
+InaccessibleStorageException: Failed to access storage account for deployment: 
+BlobUploadFailedException: Failed to upload blob to storage account: 
+Response status code does not indicate success: 403 (This request is not authorized to perform this operation.)
+```
+
+**Solution**: Use the deployment script that enables public access:
+
+```bash
+./scripts/deploy-with-restricted-storage.sh
+```
+
+This script:
+1. Detects the current public network access setting on the storage account
+2. Enables public network access if it's currently disabled
+3. Runs `azd deploy` to deploy your application
+4. Leaves public access enabled for future deployments
+
+**Note**: Public network access will remain enabled after deployment. This is necessary for the Azure Functions Flex Consumption plan to access the deployment package. You can manually disable it later if needed, but you'll need to re-enable it for subsequent deployments.
+
 ### What Gets Deployed
 
 - **Azure Functions App** (Flex Consumption plan)
