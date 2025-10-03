@@ -212,6 +212,14 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
             value: 'risk-agent-documents-v2'
           }
         {
+          name: 'ElasticsearchMaxChunkSize'
+          value: '50'
+        }
+        {
+          name: 'ElasticsearchChunkingStrategy'
+          value: 'none'
+        }
+        {
           name: 'ChunkSize'
           value: '500'
         }

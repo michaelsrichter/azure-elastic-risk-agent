@@ -21,6 +21,8 @@ internal sealed class ElasticsearchService : IElasticsearchService
     private readonly string _elasticsearchUri;
     private readonly string? _apiKey;
     private readonly string? _azureOpenAiInferenceId;
+    private readonly int _maxChunkSize;
+    private readonly string _chunkingStrategy;
 
     public ElasticsearchService(IConfiguration configuration, ILogger<ElasticsearchService> logger)
     {
@@ -32,9 +34,11 @@ internal sealed class ElasticsearchService : IElasticsearchService
             _apiKey = configuration["ElasticsearchApiKey"];
             _indexName = configuration["ElasticsearchIndexName"] ?? "risk-agent-documents";
             _azureOpenAiInferenceId = configuration["AzureOpenAiInferenceId"];
+            _maxChunkSize = int.TryParse(configuration["ElasticsearchMaxChunkSize"], out var chunkSize) ? chunkSize : 1000;
+            _chunkingStrategy = configuration["ElasticsearchChunkingStrategy"] ?? "none";
 
-            _logger.LogInformation("Elasticsearch configuration - Uri: {Uri}, IndexName: {IndexName}, HasApiKey: {HasApiKey}", 
-                _elasticsearchUri, _indexName, !string.IsNullOrEmpty(_apiKey));
+            _logger.LogInformation("Elasticsearch configuration - Uri: {Uri}, IndexName: {IndexName}, HasApiKey: {HasApiKey}, MaxChunkSize: {MaxChunkSize}, ChunkingStrategy: {ChunkingStrategy}", 
+                _elasticsearchUri, _indexName, !string.IsNullOrEmpty(_apiKey), _maxChunkSize, _chunkingStrategy);
 
             // Validate URI format
             if (!Uri.TryCreate(_elasticsearchUri, UriKind.Absolute, out var elasticsearchUriParsed))
@@ -94,6 +98,7 @@ internal sealed class ElasticsearchService : IElasticsearchService
                         )
                         .SemanticText("semantic_chunk", st => st // For the semantic_chunk field
                             .InferenceId(_azureOpenAiInferenceId ?? "azure-openai-inference") // reference Azure OpenAI endpoint id
+                            .ChunkingSettings(new Elastic.Clients.Elasticsearch.Mapping.ChunkingSettings(_maxChunkSize, _chunkingStrategy))
                         )
                     )
                 ), cancellationToken);
@@ -260,6 +265,7 @@ internal sealed class ElasticsearchService : IElasticsearchService
                         )
                         .SemanticText("semantic_chunk", st => st // For the semantic_chunk field
                             .InferenceId(_azureOpenAiInferenceId ?? "azure-openai-inference") // reference Azure OpenAI endpoint id
+                            .ChunkingSettings(new Elastic.Clients.Elasticsearch.Mapping.ChunkingSettings(_maxChunkSize, _chunkingStrategy))
                         )
                     )
                 ), cancellationToken);

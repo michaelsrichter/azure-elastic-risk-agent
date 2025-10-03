@@ -133,6 +133,14 @@ Chunking with overlap helps maintain context across chunk boundaries, which is i
 - **IndexDocumentMaxRetries** (default: 3) - Maximum number of retry attempts when calling IndexDocument fails due to transient errors. Retries are performed for 5xx server errors and 429 rate limit responses.
 - **IndexDocumentInitialRetryDelayMs** (default: 1000) - Initial delay in milliseconds before the first retry. Subsequent retries use exponential backoff (delay doubles with each attempt).
 
+#### Elasticsearch Configuration
+- **ElasticsearchUri** (default: "http://localhost:9200") - The URI of your Elasticsearch cluster
+- **ElasticsearchApiKey** - API key for authenticating with Elasticsearch (optional for local development)
+- **ElasticsearchIndexName** (default: "risk-agent-documents") - The name of the index where documents will be stored
+- **ElasticsearchMaxChunkSize** (default: 1000) - Maximum chunk size in tokens for Elasticsearch's semantic_text field chunking
+- **ElasticsearchChunkingStrategy** (default: "none") - Chunking strategy for Elasticsearch semantic_text field (e.g., "none", "sentence", "word")
+- **AzureOpenAiInferenceId** - The inference endpoint ID configured in Elasticsearch for Azure OpenAI embeddings
+
 ### Elasticsearch Integration
 
 The solution includes Elasticsearch integration for indexing processed document chunks:
