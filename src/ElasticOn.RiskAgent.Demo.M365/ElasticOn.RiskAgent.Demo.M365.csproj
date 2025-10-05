@@ -14,4 +14,16 @@
     <PackageReference Include="Microsoft.Agents.Hosting.AspNetCore" Version="1.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- appsettings.Development.json is automatically included by the SDK -->
+    <!-- Use Update instead of Include to modify the already-included item -->
+    <Content Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- Template file needs explicit Include since it doesn't match default patterns -->
+    <Content Include="appsettings.Development.json.template">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

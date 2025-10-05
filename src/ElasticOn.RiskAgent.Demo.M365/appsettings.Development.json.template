@@ -1,0 +1,17 @@
+{
+  "AIServices": {
+    "AgentID": "YOUR_AGENT_ID_HERE",
+    "ProjectEndpoint": "https://YOUR-PROJECT.services.ai.azure.com/api/projects/YOUR-PROJECT",
+    "MCPTool": {
+      "ServerUrl": "https://YOUR-ELASTIC-CLUSTER.kb.eastus.azure.elastic.cloud/api/agent_builder/mcp"
+    },
+    "ElasticApiKey": "YOUR_ELASTIC_API_KEY_HERE"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "Microsoft.Agents": "Debug"
+    }
+  }
+}

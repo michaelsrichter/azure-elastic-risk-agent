@@ -6,7 +6,7 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5130",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Playground",
+        "ASPNETCORE_ENVIRONMENT": "Development",
         "TEAMSFX_NOTIFICATION_STORE_FILENAME": ".notification.playgroundstore.json",
         "UPDATE_TEAMS_APP": "false"
       },

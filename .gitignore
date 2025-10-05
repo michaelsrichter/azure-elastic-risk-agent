@@ -275,3 +275,8 @@ __queuestorage__
 .env
 .azd/environments/
 *.parameters.json.bak
+
+# Local development settings with secrets
+**/appsettings.Development.json
+**/appsettings.*.json
+!**/appsettings.json
