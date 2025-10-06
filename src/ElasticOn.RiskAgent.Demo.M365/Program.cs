@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient("WebClient", client => client.Timeout = TimeSpan.FromSeconds(600));
+builder.Services.AddHttpClient("ContentSafetyClient", client => client.Timeout = TimeSpan.FromSeconds(30));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCloudAdapter();
 builder.Logging.AddConsole();
@@ -27,6 +28,9 @@ builder.AddAgentApplicationOptions();
 
 // Register Azure AI Agent Service
 builder.Services.AddSingleton<IAzureAIAgentService, AzureAIAgentService>();
+
+// Register Content Safety Service
+builder.Services.AddSingleton<IContentSafetyService, ContentSafetyService>();
 
 // Add the bot (which is transient)
 builder.AddAgent<RiskAgentBot>();

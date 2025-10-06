@@ -16,6 +16,7 @@ public class RiskAgentBot : AgentApplication
     #region Fields
 
     private readonly IAzureAIAgentService _azureAIAgentService;
+    private readonly IContentSafetyService _contentSafetyService;
     private readonly ILogger<RiskAgentBot> _logger;
     private readonly PersistentAgentsClient _client;
 
@@ -26,9 +27,11 @@ public class RiskAgentBot : AgentApplication
     public RiskAgentBot(
         AgentApplicationOptions options,
         IAzureAIAgentService azureAIAgentService,
+        IContentSafetyService contentSafetyService,
         ILogger<RiskAgentBot> logger) : base(options)
     {
         _azureAIAgentService = azureAIAgentService ?? throw new ArgumentNullException(nameof(azureAIAgentService));
+        _contentSafetyService = contentSafetyService ?? throw new ArgumentNullException(nameof(contentSafetyService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         // Get the Azure AI Foundry client for managing agents, threads, and runs
@@ -82,6 +85,48 @@ public class RiskAgentBot : AgentApplication
 
             _logger.LogInformation("Processing message from user in conversation {ConversationId}: {Message}",
                 conversationId, userMessage);
+
+            #endregion
+
+            #region Content Safety - Jailbreak Detection on User Prompt
+
+            // Check detection mode - skip analysis entirely if disabled
+            var detectionMode = _contentSafetyService.DetectionMode;
+            JailbreakDetectionResult detectionResult = null;
+
+            if (detectionMode != JailbreakDetectionMode.Disabled)
+            {
+                _logger.LogInformation("Analyzing user prompt for jailbreak attempts in conversation {ConversationId} (Mode: {Mode})", 
+                    conversationId, detectionMode);
+
+                detectionResult = await _contentSafetyService.DetectJailbreakAsync(userMessage, cancellationToken);
+
+                if (detectionResult.IsJailbreakDetected)
+                {
+                    _logger.LogWarning("Jailbreak attempt detected in conversation {ConversationId}. Mode: {Mode}", 
+                        conversationId, detectionMode);
+
+                    if (detectionMode == JailbreakDetectionMode.Enforce)
+                    {
+                        // Enforce mode: Block the request and show offending text
+                        _logger.LogWarning("Blocking request due to Enforce mode");
+                        await turnContext.SendActivityAsync(
+                            $"⚠️ Security Alert: A jailbreak attempt was detected and blocked.\n\n" +
+                            $"Offending text:\n\"{detectionResult.OffendingText}\"",
+                            cancellationToken: cancellationToken);
+                        return; // Block the request
+                    }
+                    // Audit mode: Continue processing but will note the detection in the response
+                }
+                else
+                {
+                    _logger.LogDebug("No jailbreak detected in user prompt for conversation {ConversationId}", conversationId);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("Jailbreak detection is disabled for conversation {ConversationId}", conversationId);
+            }
 
             #endregion
 
@@ -197,6 +242,13 @@ public class RiskAgentBot : AgentApplication
 
             }
 
+            #endregion
+
+            #region Content Safety - Analyze MCP Tool Call Outputs
+
+            // Collect MCP tool call outputs for jailbreak analysis
+            var mcpToolOutputs = new List<string>();
+            
             var runSteps = _client.Runs.GetRunStepsAsync(run);
             await foreach (var step in runSteps)
             {
@@ -212,9 +264,67 @@ public class RiskAgentBot : AgentApplication
                             _logger.LogInformation("MCP Tool Call in Step:");
                             _logger.LogInformation("  Tool ID: {ToolId}", mcpToolCall.Id);
                             _logger.LogInformation("  Tool Name: {ToolName}", mcpToolCall.Name);
+                            _logger.LogInformation("  Tool Arguments: {Arguments}", mcpToolCall.Arguments);
                             _logger.LogInformation("  Tool Output: {Output}", mcpToolCall.Output ?? "(null)");
+
+                            // Collect outputs for content safety analysis
+                            if (!string.IsNullOrWhiteSpace(mcpToolCall.Output))
+                            {
+                                mcpToolOutputs.Add(mcpToolCall.Output);
+                            }
                         }
                     }
+                }
+            }
+
+            // Analyze MCP tool outputs if any were collected (and detection is not disabled)
+            JailbreakDetectionResult? toolOutputDetectionResult = null;
+            if (mcpToolOutputs.Count > 0 && detectionMode != JailbreakDetectionMode.Disabled)
+            {
+                // Extract text content from JSON outputs to save characters and focus on actual content
+                var extractedTexts = new List<string>();
+                int originalTotalLength = 0;
+                
+                foreach (var output in mcpToolOutputs)
+                {
+                    originalTotalLength += output.Length;
+                    var extractedText = ExtractTextFromJson(output);
+                    if (!string.IsNullOrWhiteSpace(extractedText))
+                    {
+                        extractedTexts.Add(extractedText);
+                    }
+                }
+                
+                // Combine all extracted text into a single document for analysis
+                var combinedOutput = string.Join("\n\n", extractedTexts);
+                
+                _logger.LogInformation("Analyzing MCP tool outputs (extracted {ExtractedLength} chars from {OriginalLength} original chars, {Count} tool calls) for jailbreak attempts in conversation {ConversationId} (Mode: {Mode})", 
+                    combinedOutput.Length, originalTotalLength, mcpToolOutputs.Count, conversationId, detectionMode);
+
+                toolOutputDetectionResult = await _contentSafetyService.DetectJailbreakAsync(
+                    combinedOutput, 
+                    cancellationToken);
+
+                if (toolOutputDetectionResult.IsJailbreakDetected)
+                {
+                    _logger.LogWarning("Jailbreak attempt detected in MCP tool outputs for conversation {ConversationId}. Mode: {Mode}", 
+                        conversationId, detectionMode);
+
+                    if (detectionMode == JailbreakDetectionMode.Enforce)
+                    {
+                        // Enforce mode: Block the response and show offending text
+                        _logger.LogWarning("Blocking response due to Enforce mode");
+                        await turnContext.SendActivityAsync(
+                            $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\n" +
+                            $"Offending text:\n\"{toolOutputDetectionResult.OffendingText}\"",
+                            cancellationToken: cancellationToken);
+                        return; // Block the response
+                    }
+                    // Audit mode: Continue processing but will note the detection in the response
+                }
+                else
+                {
+                    _logger.LogDebug("No jailbreak detected in MCP tool outputs for conversation {ConversationId}", conversationId);
                 }
             }
 
@@ -292,6 +402,24 @@ public class RiskAgentBot : AgentApplication
 
             #region Stream Response to User
 
+            // In Audit mode, prepend security notes if jailbreak was detected
+            if (detectionMode == JailbreakDetectionMode.Audit)
+            {
+                if (detectionResult.IsJailbreakDetected)
+                {
+                    turnContext.StreamingResponse.QueueTextChunk(
+                        "📋 **Audit Note**: Jailbreak attempt detected in user prompt. " +
+                        "Processing continued for audit purposes.\n\n");
+                }
+                
+                if (toolOutputDetectionResult?.IsJailbreakDetected == true)
+                {
+                    turnContext.StreamingResponse.QueueTextChunk(
+                        "📋 **Audit Note**: Jailbreak attempt detected in retrieved data. " +
+                        "Processing continued for audit purposes.\n\n");
+                }
+            }
+
             // Retrieve all messages from the thread
             var messagesPage = _client.Messages.GetMessagesAsync(
                 threadId: threadId,
@@ -332,6 +460,75 @@ public class RiskAgentBot : AgentApplication
         {
             // Always indicate that processing is complete
             await turnContext.StreamingResponse.EndStreamAsync(cancellationToken);
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    /// <summary>
+    /// Extracts text content from JSON by removing JSON structure and keeping only string values.
+    /// This reduces the amount of data sent to Content Safety API and focuses on actual content.
+    /// </summary>
+    /// <param name="json">JSON string to extract text from</param>
+    /// <returns>Extracted text content</returns>
+    private static string ExtractTextFromJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            // Try to parse as JSON
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var textBuilder = new System.Text.StringBuilder();
+            ExtractTextFromJsonElement(document.RootElement, textBuilder);
+            return textBuilder.ToString().Trim();
+        }
+        catch
+        {
+            // If it's not valid JSON, return the original text
+            return json;
+        }
+    }
+
+    /// <summary>
+    /// Recursively extracts text from JSON elements
+    /// </summary>
+    private static void ExtractTextFromJsonElement(System.Text.Json.JsonElement element, System.Text.StringBuilder builder)
+    {
+        switch (element.ValueKind)
+        {
+            case System.Text.Json.JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    ExtractTextFromJsonElement(property.Value, builder);
+                }
+                break;
+
+            case System.Text.Json.JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    ExtractTextFromJsonElement(item, builder);
+                }
+                break;
+
+            case System.Text.Json.JsonValueKind.String:
+                var stringValue = element.GetString();
+                if (!string.IsNullOrWhiteSpace(stringValue))
+                {
+                    builder.AppendLine(stringValue);
+                }
+                break;
+
+            case System.Text.Json.JsonValueKind.Number:
+            case System.Text.Json.JsonValueKind.True:
+            case System.Text.Json.JsonValueKind.False:
+                // Skip numbers and booleans - we only care about text content
+                break;
         }
     }
 
