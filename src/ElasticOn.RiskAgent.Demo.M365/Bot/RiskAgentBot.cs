@@ -185,7 +185,11 @@ public class RiskAgentBot : AgentApplication
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                 run = await _client.Runs.GetRunAsync(threadId, run.Id, cancellationToken);
-
+                if (run.LastError != null)
+                {
+                    _logger.LogError("Failure Code: {Code}", run.LastError.Code);
+                    _logger.LogError("Failure Message: {Message}", run.LastError.Message);
+                }
                 _logger.LogDebug("Run status: {Status}", run.Status);
 
                 // Handle tool approval requests from the agent
@@ -216,6 +220,73 @@ public class RiskAgentBot : AgentApplication
 
 
             _logger.LogInformation("Run completed with status: {Status}", run.Status);
+
+            // Handle non-completed run statuses and notify the user
+            if (run.Status == RunStatus.Failed)
+            {
+                _logger.LogError("Run {RunId} FAILED for conversation {ConversationId}", run.Id, conversationId);
+                
+                if (run.LastError != null)
+                {
+                    _logger.LogError("Failure Code: {Code}", run.LastError.Code);
+                    _logger.LogError("Failure Message: {Message}", run.LastError.Message);
+                }
+                else
+                {
+                    _logger.LogError("Run failed but no error details available");
+                }
+
+                // Check if there are failed steps
+                var failedSteps = _client.Runs.GetRunStepsAsync(run);
+                await foreach (var step in failedSteps)
+                {
+                    if (step.Status == RunStepStatus.Failed)
+                    {
+                        _logger.LogError("Failed Step ID: {StepId}, Type: {StepType}", step.Id, step.Type);
+                        
+                        if (step.LastError != null)
+                        {
+                            _logger.LogError("Step Error Code: {Code}", step.LastError.Code);
+                            _logger.LogError("Step Error Message: {Message}", step.LastError.Message);
+                        }
+                    }
+                }
+
+                // Notify user about the failure
+                await turnContext.SendActivityAsync(
+                    "I encountered an error while processing your request. Please try again.", 
+                    cancellationToken: cancellationToken);
+                return; // Exit early, don't try to stream response
+            }
+            else if (run.Status == RunStatus.Cancelled)
+            {
+                _logger.LogWarning("Run {RunId} was CANCELLED for conversation {ConversationId}", run.Id, conversationId);
+                
+                await turnContext.SendActivityAsync(
+                    "Your request was cancelled. Please try again if you'd like to continue.", 
+                    cancellationToken: cancellationToken);
+                return; // Exit early
+            }
+            else if (run.Status == RunStatus.Expired)
+            {
+                _logger.LogWarning("Run {RunId} EXPIRED for conversation {ConversationId}", run.Id, conversationId);
+                
+                await turnContext.SendActivityAsync(
+                    "Your request took too long to process and has expired. Please try again with a simpler query.", 
+                    cancellationToken: cancellationToken);
+                return; // Exit early
+            }
+            else if (run.Status != RunStatus.Completed)
+            {
+                // Catch any other unexpected non-completed status
+                _logger.LogWarning("Run {RunId} ended with unexpected status {Status} for conversation {ConversationId}", 
+                    run.Id, run.Status, conversationId);
+                
+                await turnContext.SendActivityAsync(
+                    "Something unexpected happened while processing your request. Please try again.", 
+                    cancellationToken: cancellationToken);
+                return; // Exit early
+            }
 
             #endregion
 
