@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
-using UglyToad.PdfPig.Core;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Services;
 

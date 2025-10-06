@@ -1,12 +1,9 @@
-﻿using System.Text.Json;
-using Azure.AI.Agents.Persistent;
+﻿using Azure.AI.Agents.Persistent;
 using ElasticOn.RiskAgent.Demo.M365.Services;
-using Microsoft.Agents.AI;
 using Microsoft.Agents.Builder;
 using Microsoft.Agents.Builder.App;
 using Microsoft.Agents.Builder.State;
 using Microsoft.Agents.Core.Models;
-using Microsoft.Extensions.AI;
 
 namespace ElasticOn.RiskAgent.Demo.M365.Bot;
 
@@ -112,17 +109,17 @@ public class RiskAgentBot : AgentApplication
             // Threads maintain the conversation history for the agent
             string threadId = turnState.Conversation.SerializedThread();
             PersistentAgentThread persistentThread;
-            
+
             if (string.IsNullOrEmpty(threadId))
             {
                 // Create a new thread for this conversation
                 var createResponse = await _client.Threads.CreateThreadAsync();
                 persistentThread = createResponse.Value;
                 threadId = persistentThread.Id;
-                
+
                 // Save the thread ID to conversation state for future messages
                 turnState.Conversation.SerializedThread(threadId);
-                
+
                 _logger.LogInformation("Created new thread {ThreadId} for conversation {ConversationId}", threadId, conversationId);
             }
             else
@@ -130,7 +127,7 @@ public class RiskAgentBot : AgentApplication
                 // Retrieve existing thread to continue the conversation
                 var getResponse = await _client.Threads.GetThreadAsync(threadId);
                 persistentThread = getResponse.Value;
-                
+
                 _logger.LogInformation("Reusing existing thread {ThreadId} for conversation {ConversationId}", threadId, conversationId);
             }
 
@@ -157,7 +154,7 @@ public class RiskAgentBot : AgentApplication
                 MessageRole.User,
                 userMessage);
             PersistentThreadMessage message = messageResponse.Value;
-            
+
             _logger.LogInformation("Created message in thread {ThreadId}", threadId);
 
             // Get the persistent agent instance
@@ -173,7 +170,7 @@ public class RiskAgentBot : AgentApplication
                 persistentAgent,
                 toolResources: toolResources);
             ThreadRun run = runResponse.Value;
-            
+
             _logger.LogInformation("Started run {RunId} on thread {ThreadId}", run.Id, threadId);
 
             #endregion
@@ -182,55 +179,42 @@ public class RiskAgentBot : AgentApplication
 
             // Poll for run completion and handle any required tool approvals
             // The agent may need to call MCP tools (e.g., Elastic search) which require approval
-            while (run.Status == RunStatus.Queued || 
-                   run.Status == RunStatus.InProgress || 
+            while (run.Status == RunStatus.Queued ||
+                   run.Status == RunStatus.InProgress ||
                    run.Status == RunStatus.RequiresAction)
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
                 run = await _client.Runs.GetRunAsync(threadId, run.Id, cancellationToken);
-                
-                _logger.LogDebug("Run status: {Status}", run.Status);
-                
-                // Log any errors that occurred during the run
-                if (run.LastError != null)
-                {
-                    _logger.LogError("Run error: {ErrorMessage}", run.LastError.Message);
-                }
-                
-                // Handle tool approval requests from the agent
-                if (run.Status == RunStatus.RequiresAction && 
-                    run.RequiredAction is SubmitToolApprovalAction toolApprovalAction)
-                {
-                    var toolApprovals = new List<ToolApproval>();
-                    
-                    // Approve each MCP tool call and add authorization headers
-                    foreach (var toolCall in toolApprovalAction.SubmitToolApproval.ToolCalls)
-                    {
-                        if (toolCall is RequiredMcpToolCall mcpToolCall)
-                        {
-                            _logger.LogInformation("Approving MCP tool call: {ToolName}, Arguments: {Arguments}", 
-                                mcpToolCall.Name, mcpToolCall.Arguments);
-                            
-                            // Create approval with Elastic API key in authorization header
-                            var approval = new ToolApproval(mcpToolCall.Id, approve: true);
-                            approval.Headers["Authorization"] = $"ApiKey {_azureAIAgentService.GetElasticApiKey()}";
-                            toolApprovals.Add(approval);
-                        }
-                    }
 
-                    // Submit all tool approvals back to the agent
-                    if (toolApprovals.Count > 0)
+                _logger.LogDebug("Run status: {Status}", run.Status);
+
+                // Handle tool approval requests from the agent
+
+
+            }
+
+            var runSteps = _client.Runs.GetRunStepsAsync(run);
+            await foreach (var step in runSteps)
+            {
+                // Check if this is a tool call step
+                if (step.StepDetails is RunStepToolCallDetails toolCallDetails)
+                {
+                    _logger.LogInformation("Tool Call Step - Tool Calls Count: {Count}", toolCallDetails.ToolCalls.Count);
+
+                    foreach (var toolCall in toolCallDetails.ToolCalls)
                     {
-                        _logger.LogInformation("Submitting {Count} tool approvals", toolApprovals.Count);
-                        run = await _client.Runs.SubmitToolOutputsToRunAsync(
-                            threadId, 
-                            run.Id, 
-                            toolApprovals: toolApprovals,
-                            cancellationToken: cancellationToken);
+                        if (toolCall is RunStepMcpToolCall mcpToolCall)
+                        {
+                            _logger.LogInformation("MCP Tool Call in Step:");
+                            _logger.LogInformation("  Tool ID: {ToolId}", mcpToolCall.Id);
+                            _logger.LogInformation("  Tool Name: {ToolName}", mcpToolCall.Name);
+                            _logger.LogInformation("  Tool Output: {Output}", mcpToolCall.Output ?? "(null)");
+                        }
                     }
                 }
             }
-            
+
+
             _logger.LogInformation("Run completed with status: {Status}", run.Status);
 
             #endregion
@@ -246,7 +230,7 @@ public class RiskAgentBot : AgentApplication
             // Stream assistant messages (created after the user's message) back to the user
             await foreach (PersistentThreadMessage threadMessage in messagesPage)
             {
-                if (threadMessage.Role == "assistant" && 
+                if (threadMessage.Role == "assistant" &&
                     threadMessage.CreatedAt > message.CreatedAt)
                 {
                     foreach (MessageContent contentItem in threadMessage.ContentItems)

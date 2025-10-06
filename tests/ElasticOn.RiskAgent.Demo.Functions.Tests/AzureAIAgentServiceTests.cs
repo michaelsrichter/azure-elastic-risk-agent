@@ -1,11 +1,8 @@
-using Azure;
 using Azure.AI.Agents.Persistent;
 using ElasticOn.RiskAgent.Demo.M365.Services;
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using NSubstitute.ExceptionExtensions;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 

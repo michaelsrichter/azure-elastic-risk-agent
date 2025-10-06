@@ -1,16 +1,9 @@
-using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using UglyToad.PdfPig;
-using UglyToad.PdfPig.Writer;
-using UglyToad.PdfPig.Core;
-using UglyToad.PdfPig.Fonts;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using ElasticOn.RiskAgent.Demo.Functions.Models;
-using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;

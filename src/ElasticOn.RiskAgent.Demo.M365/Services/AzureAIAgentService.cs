@@ -1,8 +1,5 @@
-using System;
 using Azure.AI.Agents.Persistent;
 using Azure.Identity;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Agents.AI;
 
 namespace ElasticOn.RiskAgent.Demo.M365.Services;
 
@@ -167,7 +164,7 @@ public class AzureAIAgentService : IAzureAIAgentService
     {
         var mcpToolResource = new MCPToolResource(serverLabel: _mcpServerLabel)
         {
-            RequireApproval = new MCPApproval("always")
+            RequireApproval = new MCPApproval("never")
         };
         
         // Add authorization header for Elastic API

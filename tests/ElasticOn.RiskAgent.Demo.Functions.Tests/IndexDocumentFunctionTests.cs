@@ -2,7 +2,6 @@ using ElasticOn.RiskAgent.Demo.Functions.Models;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 

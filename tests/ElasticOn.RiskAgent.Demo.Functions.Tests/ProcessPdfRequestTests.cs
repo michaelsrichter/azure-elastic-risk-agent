@@ -1,6 +1,5 @@
 using System.Text.Json;
 using ElasticOn.RiskAgent.Demo.Functions.Models;
-using Xunit;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 

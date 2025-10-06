@@ -1,12 +1,9 @@
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using ElasticOn.RiskAgent.Demo.Functions.Models;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using Microsoft.Extensions.Configuration;
-using NSubstitute;
-using Xunit;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 

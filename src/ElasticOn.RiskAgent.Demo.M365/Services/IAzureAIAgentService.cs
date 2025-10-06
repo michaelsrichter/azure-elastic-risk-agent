@@ -1,5 +1,4 @@
 using Azure.AI.Agents.Persistent;
-using Microsoft.Agents.AI;
 
 namespace ElasticOn.RiskAgent.Demo.M365.Services;
 

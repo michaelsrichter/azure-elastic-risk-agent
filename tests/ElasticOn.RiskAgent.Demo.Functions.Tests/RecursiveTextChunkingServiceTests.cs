@@ -1,5 +1,4 @@
 using ElasticOn.RiskAgent.Demo.Functions.Services;
-using Xunit;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Tests;
 

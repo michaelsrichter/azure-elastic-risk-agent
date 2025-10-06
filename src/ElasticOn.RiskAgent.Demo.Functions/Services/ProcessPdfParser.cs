@@ -2,7 +2,6 @@ using ElasticOn.RiskAgent.Demo.Functions.Models;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
 using System.Text;
-using System.Net.Http;
 
 namespace ElasticOn.RiskAgent.Demo.Functions.Services;
 
