@@ -5,11 +5,22 @@
             "name": "Attach to .NET Functions",
             "type": "coreclr",
             "request": "attach",
-            "processId": "${command:pickProcess}",
-            "sourceFileMap": {
-                "/home/vsts/work/1/s": "${workspaceFolder}"
-            }
+            "processId": "${command:azureFunctions.pickProcess}",
+            "preLaunchTask": "func: host start"
+        },
+        {
+            "name": "Launch Functions (Start and Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "func",
+            "args": [
+                "host",
+                "start"
+            ],
+            "cwd": "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions",
+            "console": "integratedTerminal",
+            "stopAtEntry": false,
+            "preLaunchTask": "build"
         }
-    ],
-    "compounds": []
+    ]
 }

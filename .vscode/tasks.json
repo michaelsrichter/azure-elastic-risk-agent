@@ -61,14 +61,13 @@
         },
         {
             "type": "func",
-            "label": "func: host start",
-            "command": "host start",
-            "problemMatcher": "$func-dotnet-watch",
-            "isBackground": true,
             "dependsOn": "build",
             "options": {
                 "cwd": "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions"
-            }
+            },
+            "command": "host start",
+            "isBackground": true,
+            "label": "func: host start"
         }
     ]
 }

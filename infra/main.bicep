@@ -52,11 +52,6 @@ param mcpAllowedTools string = 'azure_elastic_risk_agent_search_docs,azure_elast
 @description('Elastic API Key for MCP Server authentication')
 param elasticApiKey string = 'your-elasticsearch-api-key-here'
 
-
-@description('Content Safety Subscription Key')
-@secure()
-param contentSafetySubscriptionKey string = ''
-
 @description('Content Safety Jailbreak Detection Mode')
 param contentSafetyJailbreakDetectionMode string = 'Audit'
 
@@ -137,24 +132,6 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   properties: {
     Application_Type: 'web'
     WorkspaceResourceId: logAnalyticsWorkspace.id
-  }
-}
-
-// Azure OpenAI Service for text embeddings
-resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
-  name: 'azoai${resourceToken}'
-  location: location
-  tags: tags
-  kind: 'OpenAI'
-  sku: {
-    name: 'S0'
-  }
-  properties: {
-    customSubDomainName: 'azoai${resourceToken}'
-    publicNetworkAccess: 'Enabled'
-    networkAcls: {
-      defaultAction: 'Allow'
-    }
   }
 }
 
@@ -299,24 +276,6 @@ resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
   }
 }
 
-// Text Embedding Model Deployment
-resource textEmbeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
-  parent: openAiService
-  name: 'text-embedding-ada-002'
-  properties: {
-    model: {
-      format: 'OpenAI'
-      name: 'text-embedding-ada-002'
-      version: '2'
-    }
-    raiPolicyName: 'Microsoft.Default'
-  }
-  sku: {
-    name: 'Standard'
-    capacity: 120
-  }
-}
-
 // Azure Static Web App (Standard SKU)
 resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
   name: 'azswa${resourceToken}'
@@ -398,14 +357,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'Recommended'
         }
         {
-          name: 'AZURE_OPENAI_ENDPOINT'
-          value: openAiService.properties.endpoint
-        }
-        {
-          name: 'AZURE_OPENAI_API_KEY'
-          value: openAiService.listKeys().key1
-        }
-        {
           name: 'AzureOpenAiInferenceId'
           value: 'azureopenai-text-embedding-${resourceToken}'
         }
@@ -418,12 +369,12 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'your-elasticsearch-api-key-here'
         }
         {
-            name: 'ElasticsearchIndexName'
-            value: 'risk-agent-documents-v2'
-          }
+          name: 'ElasticsearchIndexName'
+          value: 'risk-agent-documents-v2'
+        }
         {
           name: 'ElasticsearchMaxChunkSize'
-          value: '50'
+          value: '1000'
         }
         {
           name: 'ElasticsearchChunkingStrategy'
@@ -567,32 +518,34 @@ resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
 }
 
 // Role assignments for the managed identity
-resource storageRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for role in [
-  {
-    name: 'Storage Blob Data Owner'
-    id: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+resource storageRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
+  for role in [
+    {
+      name: 'Storage Blob Data Owner'
+      id: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+    }
+    {
+      name: 'Storage Blob Data Contributor'
+      id: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    }
+    {
+      name: 'Storage Queue Data Contributor'
+      id: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+    }
+    {
+      name: 'Storage Table Data Contributor'
+      id: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+    }
+  ]: {
+    name: guid(storageAccount.id, managedIdentity.id, role.id)
+    scope: storageAccount
+    properties: {
+      roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', role.id)
+      principalId: managedIdentity.properties.principalId
+      principalType: 'ServicePrincipal'
+    }
   }
-  {
-    name: 'Storage Blob Data Contributor' 
-    id: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-  }
-  {
-    name: 'Storage Queue Data Contributor'
-    id: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
-  }
-  {
-    name: 'Storage Table Data Contributor'
-    id: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
-  }
-]: {
-  name: guid(storageAccount.id, managedIdentity.id, role.id)
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', role.id)
-    principalId: managedIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}]
+]
 
 // Note: User storage role assignments can be added manually via Azure Portal or CLI if needed
 // Avoided here to prevent role assignment conflicts during deployment
@@ -602,18 +555,10 @@ resource monitoringRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
   name: guid(applicationInsights.id, managedIdentity.id, '3913510d-42f4-4e42-8a64-420c390055eb')
   scope: applicationInsights
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
-    principalId: managedIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Azure OpenAI User role assignment for the managed identity
-resource openAiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(openAiService.id, managedIdentity.id, '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
-  scope: openAiService
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '3913510d-42f4-4e42-8a64-420c390055eb'
+    )
     principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -624,7 +569,10 @@ resource staticWebAppRoleAssignment 'Microsoft.Authorization/roleAssignments@202
   name: guid(staticWebApp.id, managedIdentity.id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
   scope: staticWebApp
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'b24988ac-6180-42a0-ab88-20f7382dd24c'
+    )
     principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -635,7 +583,10 @@ resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04
   name: guid(keyVault.id, aiHub.id, 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
   scope: keyVault
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
+    )
     principalId: aiHub.identity.principalId
     principalType: 'ServicePrincipal'
   }
@@ -646,7 +597,10 @@ resource aiHubStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@202
   name: guid(aiFoundryStorageAccount.id, aiHub.id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: aiFoundryStorageAccount
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+    )
     principalId: aiHub.identity.principalId
     principalType: 'ServicePrincipal'
   }
@@ -657,7 +611,10 @@ resource aiServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
   name: guid(aiFoundryService.id, managedIdentity.id, '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
   scope: aiFoundryService
   properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+    )
     principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -669,8 +626,6 @@ output AZURE_FUNCTION_APP_NAME string = functionApp.name
 output AZURE_FUNCTION_APP_URL string = 'https://${functionApp.properties.defaultHostName}'
 output AZURE_APPLICATION_INSIGHTS_CONNECTION_STRING string = applicationInsights.properties.ConnectionString
 output AZURE_STORAGE_ACCOUNT_NAME string = storageAccount.name
-output AZURE_OPENAI_ENDPOINT string = openAiService.properties.endpoint
-output AZURE_OPENAI_DEPLOYMENT_NAME string = textEmbeddingDeployment.name
 output AZURE_OPENAI_INFERENCE_ID string = 'azureopenai-text-embedding-${resourceToken}'
 output AZURE_AI_FOUNDRY_NAME string = aiFoundryService.name
 output AZURE_AI_FOUNDRY_ENDPOINT string = aiFoundryService.properties.endpoint
@@ -683,5 +638,3 @@ output AZURE_AI_PROJECT_ENDPOINT string = 'https://${aiFoundryService.properties
 output AZURE_KEY_VAULT_NAME string = keyVault.name
 output AZURE_STATIC_WEB_APP_NAME string = staticWebApp.name
 output AZURE_STATIC_WEB_APP_URL string = 'https://${staticWebApp.properties.defaultHostname}'
-
-
