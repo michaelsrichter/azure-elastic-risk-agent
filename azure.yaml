@@ -17,6 +17,11 @@ services:
     project: ./src/ElasticOn.RiskAgent.Demo.Functions
     language: dotnet
     host: function
+  web:
+    project: ./src/ElasticOn.RiskAgent.Demo.Web
+    language: dotnet
+    host: staticwebapp
+    dist: wwwroot
 
 infra:
   provider: bicep

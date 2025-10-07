@@ -107,6 +107,49 @@ resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   }
 }
 
+// Azure AI Foundry Service
+resource aiFoundryService 'Microsoft.CognitiveServices/accounts@2025-07-01-preview' = {
+  name: 'azaif${resourceToken}'
+  location: location
+  tags: tags
+  kind: 'AIServices'
+  sku: {
+    name: 'S0'
+  }
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    apiProperties: {}
+    customSubDomainName: 'azaif${resourceToken}'
+    networkAcls: {
+      defaultAction: 'Allow'
+      virtualNetworkRules: []
+      ipRules: []
+    }
+    allowProjectManagement: true
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+// GPT-4o-mini Model Deployment (250K TPM)
+resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-07-01-preview' = {
+  parent: aiFoundryService
+  name: 'gpt-4o-mini'
+  properties: {
+    model: {
+      format: 'OpenAI'
+      name: 'gpt-4o-mini'
+      version: '2024-07-18'
+    }
+    raiPolicyName: 'Microsoft.Default'
+  }
+  sku: {
+    name: 'Standard'
+    capacity: 250
+  }
+}
+
 // Text Embedding Model Deployment
 resource textEmbeddingDeployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = {
   parent: openAiService
@@ -122,6 +165,24 @@ resource textEmbeddingDeployment 'Microsoft.CognitiveServices/accounts/deploymen
   sku: {
     name: 'Standard'
     capacity: 120
+  }
+}
+
+// Azure Static Web App (Standard SKU)
+resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
+  name: 'azswa${resourceToken}'
+  location: location
+  tags: union(tags, {
+    'azd-service-name': 'web'
+  })
+  sku: {
+    name: 'Standard'
+    tier: 'Standard'
+  }
+  properties: {
+    allowConfigFileUpdates: true
+    stagingEnvironmentPolicy: 'Enabled'
+    enterpriseGradeCdnStatus: 'Disabled'
   }
 }
 
@@ -347,6 +408,17 @@ resource openAiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-0
   }
 }
 
+// Static Web App Contributor role assignment for the managed identity
+resource staticWebAppRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(staticWebApp.id, managedIdentity.id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+  scope: staticWebApp
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // Outputs
 output RESOURCE_GROUP_ID string = resourceGroup().id
 output AZURE_FUNCTION_APP_NAME string = functionApp.name
@@ -356,3 +428,10 @@ output AZURE_STORAGE_ACCOUNT_NAME string = storageAccount.name
 output AZURE_OPENAI_ENDPOINT string = openAiService.properties.endpoint
 output AZURE_OPENAI_DEPLOYMENT_NAME string = textEmbeddingDeployment.name
 output AZURE_OPENAI_INFERENCE_ID string = 'azureopenai-text-embedding-${resourceToken}'
+output AZURE_AI_FOUNDRY_NAME string = aiFoundryService.name
+output AZURE_AI_FOUNDRY_ENDPOINT string = aiFoundryService.properties.endpoint
+output AZURE_AI_FOUNDRY_GPT4O_MINI_DEPLOYMENT_NAME string = gpt4oMiniDeployment.name
+output AZURE_STATIC_WEB_APP_NAME string = staticWebApp.name
+output AZURE_STATIC_WEB_APP_URL string = 'https://${staticWebApp.properties.defaultHostname}'
+
+
