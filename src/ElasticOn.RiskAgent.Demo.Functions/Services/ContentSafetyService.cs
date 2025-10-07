@@ -34,7 +34,7 @@ public class ContentSafetyService : IContentSafetyService
 
         // Read detection mode configuration
         var modeString = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_JAILBREAK_DETECTION_MODE")
-            ?? configuration["AIServices:ContentSafety:JailbreakDetectionMode"]
+            ?? configuration["AIServicesContentSafetyJailbreakDetectionMode"]
             ?? "Enforce"; // Default to Enforce for backward compatibility
 
         if (!Enum.TryParse<JailbreakDetectionMode>(modeString, true, out var mode))
@@ -45,26 +45,17 @@ public class ContentSafetyService : IContentSafetyService
 
         DetectionMode = mode;
 
-        // Read Content Safety configuration - only required if not disabled
-        if (DetectionMode != JailbreakDetectionMode.Disabled)
-        {
-            _endpoint = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_ENDPOINT")
-                ?? configuration["AIServices:ContentSafety:Endpoint"]
-                ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_ENDPOINT is not set.");
+        // Always read Content Safety configuration since detection mode can be overridden per request
+        _endpoint = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_ENDPOINT")
+            ?? configuration["AIServicesContentSafetyEndpoint"]
+            ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_ENDPOINT is not set.");
 
-            _subscriptionKey = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY")
-                ?? configuration["AIServices:ContentSafety:SubscriptionKey"]
-                ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY is not set.");
+        _subscriptionKey = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY")
+            ?? configuration["AIServicesContentSafetySubscriptionKey"]
+            ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY is not set.");
 
-            _logger.LogInformation("ContentSafetyService initialized with endpoint: {Endpoint}, jailbreak detection mode: {Mode}", 
-                _endpoint, DetectionMode);
-        }
-        else
-        {
-            _endpoint = string.Empty;
-            _subscriptionKey = string.Empty;
-            _logger.LogInformation("ContentSafetyService initialized with jailbreak detection mode: Disabled");
-        }
+        _logger.LogInformation("ContentSafetyService initialized with endpoint: {Endpoint}, jailbreak detection mode: {Mode}", 
+            _endpoint, DetectionMode);
     }
 
     /// <summary>
@@ -156,7 +147,7 @@ public class ContentSafetyService : IContentSafetyService
 
             var url = $"{_endpoint}/contentsafety/text:shieldPrompt?api-version={ApiVersion}";
 
-            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
             httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", _subscriptionKey);
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 

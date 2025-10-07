@@ -278,7 +278,7 @@ public class RiskAgentBot : AgentApplication
             }
 
             // Analyze MCP tool outputs if any were collected (and detection is not disabled)
-            JailbreakDetectionResult? toolOutputDetectionResult = null;
+            JailbreakDetectionResult toolOutputDetectionResult = null;
             if (mcpToolOutputs.Count > 0 && detectionMode != JailbreakDetectionMode.Disabled)
             {
                 // Extract text content from JSON outputs to save characters and focus on actual content

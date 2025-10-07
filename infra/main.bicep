@@ -52,8 +52,6 @@ param mcpAllowedTools string = 'azure_elastic_risk_agent_search_docs,azure_elast
 @description('Elastic API Key for MCP Server authentication')
 param elasticApiKey string = 'your-elasticsearch-api-key-here'
 
-@description('Content Safety Endpoint')
-param contentSafetyEndpoint string = ''
 
 @description('Content Safety Subscription Key')
 @secure()
@@ -448,55 +446,55 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: 'https://${aiFoundryService.properties.endpoint}/api/projects/${aiProject.name}'
         }
         {
-          name: 'AIServices:AgentID'
+          name: 'AIServicesAgentID'
           value: agentId
         }
         {
-          name: 'AIServices:ProjectEndpoint'
+          name: 'AIServicesProjectEndpoint'
           value: 'https://${aiFoundryService.properties.endpoint}/api/projects/${aiProject.name}'
         }
         {
-          name: 'AIServices:ModelId'
+          name: 'AIServicesModelId'
           value: gpt4oMiniDeployment.name
         }
         {
-          name: 'AIServices:Agent:Name'
+          name: 'AIServicesAgentName'
           value: agentName
         }
         {
-          name: 'AIServices:Agent:Instructions'
+          name: 'AIServicesAgentInstructions'
           value: agentInstructions
         }
         {
-          name: 'AIServices:MCPTool:ServerLabel'
+          name: 'AIServicesMCPToolServerLabel'
           value: mcpServerLabel
         }
         {
-          name: 'AIServices:MCPTool:ServerUrl'
+          name: 'AIServicesMCPToolServerUrl'
           value: mcpServerUrl
         }
         {
-          name: 'AIServices:MCPTool:AllowedTools:0'
+          name: 'AIServicesMCPToolAllowedTools0'
           value: split(mcpAllowedTools, ',')[0]
         }
         {
-          name: 'AIServices:MCPTool:AllowedTools:1'
+          name: 'AIServicesMCPToolAllowedTools1'
           value: length(split(mcpAllowedTools, ',')) > 1 ? split(mcpAllowedTools, ',')[1] : ''
         }
         {
-          name: 'AIServices:ElasticApiKey'
+          name: 'AIServicesElasticApiKey'
           value: elasticApiKey
         }
         {
-          name: 'AIServices:ContentSafety:Endpoint'
-          value: contentSafetyEndpoint
+          name: 'AIServicesContentSafetyEndpoint'
+          value: aiFoundryService.properties.endpoints.contentSafety
         }
         {
-          name: 'AIServices:ContentSafety:SubscriptionKey'
-          value: contentSafetySubscriptionKey
+          name: 'AIServicesContentSafetySubscriptionKey'
+          value: aiFoundryService.listKeys().key1
         }
         {
-          name: 'AIServices:ContentSafety:JailbreakDetectionMode'
+          name: 'AIServicesContentSafetyJailbreakDetectionMode'
           value: contentSafetyJailbreakDetectionMode
         }
       ]

@@ -43,6 +43,15 @@
     </div>
 
     <div class="chat-input-container">
+        <div class="content-safety-selector">
+            <label for="contentSafetyMode">Content Safety:</label>
+            <select id="contentSafetyMode" @bind="selectedContentSafetyMode" disabled="@isProcessing">
+                <option value="Disabled">Disabled</option>
+                <option value="Audit">Audit</option>
+                <option value="Enforce">Enforce</option>
+            </select>
+        </div>
+        
         <div class="input-wrapper">
             <input type="text" 
                    class="chat-input" 
@@ -85,6 +94,7 @@
     private string currentMessage = string.Empty;
     private bool isProcessing = false;
     private ElementReference messagesContainer;
+    private string selectedContentSafetyMode = "Disabled";
 
     private readonly string[] samplePrompts = new[]
     {
@@ -150,7 +160,8 @@
             {
                 Message = userMessage,
                 ConversationId = ChatState.ConversationId,
-                ThreadId = ChatState.ThreadId
+                ThreadId = ChatState.ThreadId,
+                ContentSafetyMode = selectedContentSafetyMode
             };
 
             // Call the Azure Function API (endpoint will be configured later)

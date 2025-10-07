@@ -26,21 +26,21 @@ public class AzureAIAgentServiceTests
     {
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:AgentID"] = agentId,
-            ["AIServices:ProjectEndpoint"] = projectEndpoint ?? "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = modelId ?? "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = agentName ?? "TestAgent",
-            ["AIServices:Agent:Instructions"] = agentInstructions ?? "Test instructions",
-            ["AIServices:MCPTool:ServerLabel"] = mcpServerLabel ?? "elastic_search_mcp",
-            ["AIServices:MCPTool:ServerUrl"] = mcpServerUrl ?? "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:ElasticApiKey"] = elasticApiKey ?? "test-api-key"
+            ["AIServicesAgentID"] = agentId,
+            ["AIServicesProjectEndpoint"] = projectEndpoint ?? "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = modelId ?? "gpt-4o-mini",
+            ["AIServicesAgentName"] = agentName ?? "TestAgent",
+            ["AIServicesAgentInstructions"] = agentInstructions ?? "Test instructions",
+            ["AIServicesMCPToolServerLabel"] = mcpServerLabel ?? "elastic_search_mcp",
+            ["AIServicesMCPToolServerUrl"] = mcpServerUrl ?? "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesElasticApiKey"] = elasticApiKey ?? "test-api-key"
         };
 
         // Add allowed tools
         var allowedTools = mcpAllowedTools ?? new List<string> { "azure_elastic_risk_agent_search_docs" };
         for (int i = 0; i < allowedTools.Count; i++)
         {
-            configDict[$"AIServices:MCPTool:AllowedTools:{i}"] = allowedTools[i];
+            configDict[$"AIServicesMCPToolAllowedTools{i}"] = allowedTools[i];
         }
 
         return new ConfigurationBuilder()
@@ -77,13 +77,13 @@ public class AzureAIAgentServiceTests
         var configDict = new Dictionary<string, string?>
         {
             // ProjectEndpoint is intentionally not added
-            ["AIServices:ModelId"] = "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = "TestAgent",
-            ["AIServices:Agent:Instructions"] = "Test instructions",
-            ["AIServices:MCPTool:ServerLabel"] = "elastic_search_mcp",
-            ["AIServices:MCPTool:ServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs",
-            ["AIServices:ElasticApiKey"] = "test-api-key"
+            ["AIServicesModelId"] = "gpt-4o-mini",
+            ["AIServicesAgentName"] = "TestAgent",
+            ["AIServicesAgentInstructions"] = "Test instructions",
+            ["AIServicesMCPToolServerLabel"] = "elastic_search_mcp",
+            ["AIServicesMCPToolServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs",
+            ["AIServicesElasticApiKey"] = "test-api-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -103,14 +103,14 @@ public class AzureAIAgentServiceTests
         // Arrange - Create config with missing AgentName
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = "gpt-4o-mini",
+            ["AIServicesProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = "gpt-4o-mini",
             // AgentName is intentionally not added
-            ["AIServices:Agent:Instructions"] = "Test instructions",
-            ["AIServices:MCPTool:ServerLabel"] = "elastic_search_mcp",
-            ["AIServices:MCPTool:ServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs",
-            ["AIServices:ElasticApiKey"] = "test-api-key"
+            ["AIServicesAgentInstructions"] = "Test instructions",
+            ["AIServicesMCPToolServerLabel"] = "elastic_search_mcp",
+            ["AIServicesMCPToolServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs",
+            ["AIServicesElasticApiKey"] = "test-api-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -121,7 +121,7 @@ public class AzureAIAgentServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new AzureAIAgentService(config, logger));
         
-        Assert.Contains("AIServices:Agent:Name", exception.Message);
+        Assert.Contains("AIServicesAgentName", exception.Message);
     }
 
     [Fact]
@@ -130,14 +130,14 @@ public class AzureAIAgentServiceTests
         // Arrange - Create config with missing AgentInstructions
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = "TestAgent",
+            ["AIServicesProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = "gpt-4o-mini",
+            ["AIServicesAgentName"] = "TestAgent",
             // AgentInstructions is intentionally not added
-            ["AIServices:MCPTool:ServerLabel"] = "elastic_search_mcp",
-            ["AIServices:MCPTool:ServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs",
-            ["AIServices:ElasticApiKey"] = "test-api-key"
+            ["AIServicesMCPToolServerLabel"] = "elastic_search_mcp",
+            ["AIServicesMCPToolServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs",
+            ["AIServicesElasticApiKey"] = "test-api-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -148,7 +148,7 @@ public class AzureAIAgentServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new AzureAIAgentService(config, logger));
         
-        Assert.Contains("AIServices:Agent:Instructions", exception.Message);
+        Assert.Contains("AIServicesAgentInstructions", exception.Message);
     }
 
     [Fact]
@@ -157,14 +157,14 @@ public class AzureAIAgentServiceTests
         // Arrange - Create config with missing MCPServerLabel
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = "TestAgent",
-            ["AIServices:Agent:Instructions"] = "Test instructions",
+            ["AIServicesProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = "gpt-4o-mini",
+            ["AIServicesAgentName"] = "TestAgent",
+            ["AIServicesAgentInstructions"] = "Test instructions",
             // MCPServerLabel is intentionally not added
-            ["AIServices:MCPTool:ServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs",
-            ["AIServices:ElasticApiKey"] = "test-api-key"
+            ["AIServicesMCPToolServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs",
+            ["AIServicesElasticApiKey"] = "test-api-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -175,7 +175,7 @@ public class AzureAIAgentServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new AzureAIAgentService(config, logger));
         
-        Assert.Contains("AIServices:MCPTool:ServerLabel", exception.Message);
+        Assert.Contains("AIServicesMCPToolServerLabel", exception.Message);
     }
 
     [Fact]
@@ -184,14 +184,14 @@ public class AzureAIAgentServiceTests
         // Arrange - Create config with missing MCPServerUrl
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = "TestAgent",
-            ["AIServices:Agent:Instructions"] = "Test instructions",
-            ["AIServices:MCPTool:ServerLabel"] = "elastic_search_mcp",
+            ["AIServicesProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = "gpt-4o-mini",
+            ["AIServicesAgentName"] = "TestAgent",
+            ["AIServicesAgentInstructions"] = "Test instructions",
+            ["AIServicesMCPToolServerLabel"] = "elastic_search_mcp",
             // MCPServerUrl is intentionally not added
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs",
-            ["AIServices:ElasticApiKey"] = "test-api-key"
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs",
+            ["AIServicesElasticApiKey"] = "test-api-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -202,7 +202,7 @@ public class AzureAIAgentServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new AzureAIAgentService(config, logger));
         
-        Assert.Contains("AIServices:MCPTool:ServerUrl", exception.Message);
+        Assert.Contains("AIServicesMCPToolServerUrl", exception.Message);
     }
 
     [Fact]
@@ -211,13 +211,13 @@ public class AzureAIAgentServiceTests
         // Arrange - Create config with missing ElasticApiKey
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
-            ["AIServices:ModelId"] = "gpt-4o-mini",
-            ["AIServices:Agent:Name"] = "TestAgent",
-            ["AIServices:Agent:Instructions"] = "Test instructions",
-            ["AIServices:MCPTool:ServerLabel"] = "elastic_search_mcp",
-            ["AIServices:MCPTool:ServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
-            ["AIServices:MCPTool:AllowedTools:0"] = "azure_elastic_risk_agent_search_docs"
+            ["AIServicesProjectEndpoint"] = "https://test-project.services.ai.azure.com/api/projects/test-project",
+            ["AIServicesModelId"] = "gpt-4o-mini",
+            ["AIServicesAgentName"] = "TestAgent",
+            ["AIServicesAgentInstructions"] = "Test instructions",
+            ["AIServicesMCPToolServerLabel"] = "elastic_search_mcp",
+            ["AIServicesMCPToolServerUrl"] = "https://test-elastic.azure.elastic.cloud/api/agent_builder/mcp",
+            ["AIServicesMCPToolAllowedTools0"] = "azure_elastic_risk_agent_search_docs"
             // ElasticApiKey is intentionally not added
         };
         var config = new ConfigurationBuilder()
@@ -229,7 +229,7 @@ public class AzureAIAgentServiceTests
         var exception = Assert.Throws<InvalidOperationException>(() => 
             new AzureAIAgentService(config, logger));
         
-        Assert.Contains("AIServices:ElasticApiKey", exception.Message);
+        Assert.Contains("AIServicesElasticApiKey", exception.Message);
     }
 
     [Fact]

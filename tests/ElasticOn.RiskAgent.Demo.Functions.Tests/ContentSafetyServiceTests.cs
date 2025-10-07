@@ -21,8 +21,8 @@ public class ContentSafetyServiceTests
     {
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ContentSafety:Endpoint"] = endpoint ?? "https://test-contentsafety.cognitiveservices.azure.com/",
-            ["AIServices:ContentSafety:SubscriptionKey"] = subscriptionKey ?? "test-subscription-key-123"
+            ["AIServicesContentSafetyEndpoint"] = endpoint ?? "https://test-contentsafety.cognitiveservices.azure.com/",
+            ["AIServicesContentSafetySubscriptionKey"] = subscriptionKey ?? "test-subscription-key-123"
         };
 
         return new ConfigurationBuilder()
@@ -88,7 +88,7 @@ public class ContentSafetyServiceTests
         var configDict = new Dictionary<string, string?>
         {
             // Endpoint is intentionally not added
-            ["AIServices:ContentSafety:SubscriptionKey"] = "test-key"
+            ["AIServicesContentSafetySubscriptionKey"] = "test-key"
         };
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(configDict)
@@ -111,7 +111,7 @@ public class ContentSafetyServiceTests
         // Arrange
         var configDict = new Dictionary<string, string?>
         {
-            ["AIServices:ContentSafety:Endpoint"] = "https://test.cognitiveservices.azure.com/",
+            ["AIServicesContentSafetyEndpoint"] = "https://test.cognitiveservices.azure.com/",
             // SubscriptionKey is intentionally not added
         };
         var config = new ConfigurationBuilder()

@@ -20,6 +20,12 @@ public class SendMessageRequest
     public string Message { get; set; } = string.Empty;
     public string ConversationId { get; set; } = string.Empty;
     public string? ThreadId { get; set; }
+    
+    /// <summary>
+    /// Optional content safety mode override. If not specified, uses configuration default.
+    /// Valid values: "Disabled", "Audit", "Enforce"
+    /// </summary>
+    public string? ContentSafetyMode { get; set; }
 }
 
 /// <summary>

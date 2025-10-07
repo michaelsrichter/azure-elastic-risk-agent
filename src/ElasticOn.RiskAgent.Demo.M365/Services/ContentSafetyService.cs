@@ -32,7 +32,7 @@ public class ContentSafetyService : IContentSafetyService
 
         // Read detection mode configuration
         var modeString = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_JAILBREAK_DETECTION_MODE")
-            ?? configuration["AIServices:ContentSafety:JailbreakDetectionMode"]
+            ?? configuration["AIServicesContentSafetyJailbreakDetectionMode"]
             ?? "Enforce"; // Default to Enforce for backward compatibility
 
         if (!Enum.TryParse<JailbreakDetectionMode>(modeString, true, out var mode))
@@ -47,11 +47,11 @@ public class ContentSafetyService : IContentSafetyService
         if (DetectionMode != JailbreakDetectionMode.Disabled)
         {
             _endpoint = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_ENDPOINT")
-                ?? configuration["AIServices:ContentSafety:Endpoint"]
+                ?? configuration["AIServicesContentSafetyEndpoint"]
                 ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_ENDPOINT is not set.");
 
             _subscriptionKey = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY")
-                ?? configuration["AIServices:ContentSafety:SubscriptionKey"]
+                ?? configuration["AIServicesContentSafetySubscriptionKey"]
                 ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY is not set.");
 
             _logger.LogInformation("ContentSafetyService initialized with endpoint: {Endpoint}, jailbreak detection mode: {Mode}", 

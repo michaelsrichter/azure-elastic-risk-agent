@@ -26,36 +26,48 @@ public class AzureAIAgentService : IAzureAIAgentService
         
         // Read endpoint from environment variable or configuration
         _endpoint = Environment.GetEnvironmentVariable("AZURE_FOUNDRY_PROJECT_ENDPOINT") 
-            ?? configuration["AIServices:ProjectEndpoint"]
+            ?? configuration["AIServicesProjectEndpoint"]
             ?? throw new InvalidOperationException("AZURE_FOUNDRY_PROJECT_ENDPOINT is not set.");
 
         _model = Environment.GetEnvironmentVariable("AZURE_FOUNDRY_PROJECT_MODEL_ID") 
-            ?? configuration["AIServices:ModelId"]
+            ?? configuration["AIServicesModelId"]
             ?? "gpt-4.1-mini";
 
         // Read optional pre-configured Agent ID from configuration
-        _configuredAgentId = configuration["AIServices:AgentID"];
+        _configuredAgentId = configuration["AIServicesAgentID"];
 
         // Read agent configuration
-        _agentName = configuration["AIServices:Agent:Name"] 
-            ?? throw new InvalidOperationException("AIServices:Agent:Name is not configured in appsettings.json");
+        _agentName = configuration["AIServicesAgentName"] 
+            ?? throw new InvalidOperationException("AIServicesAgentName is not configured in appsettings.json");
         
-        _agentInstructions = configuration["AIServices:Agent:Instructions"] 
-            ?? throw new InvalidOperationException("AIServices:Agent:Instructions is not configured in appsettings.json");
+        _agentInstructions = configuration["AIServicesAgentInstructions"] 
+            ?? throw new InvalidOperationException("AIServicesAgentInstructions is not configured in appsettings.json");
 
         // Read MCP tool configuration
-        _mcpServerLabel = configuration["AIServices:MCPTool:ServerLabel"] 
-            ?? throw new InvalidOperationException("AIServices:MCPTool:ServerLabel is not configured in appsettings.json");
+        _mcpServerLabel = configuration["AIServicesMCPToolServerLabel"] 
+            ?? throw new InvalidOperationException("AIServicesMCPToolServerLabel is not configured in appsettings.json");
         
-        _mcpServerUrl = configuration["AIServices:MCPTool:ServerUrl"] 
-            ?? throw new InvalidOperationException("AIServices:MCPTool:ServerUrl is not configured in appsettings.json");
+        _mcpServerUrl = configuration["AIServicesMCPToolServerUrl"] 
+            ?? throw new InvalidOperationException("AIServicesMCPToolServerUrl is not configured in appsettings.json");
         
-        _mcpAllowedTools = configuration.GetSection("AIServices:MCPTool:AllowedTools").Get<List<string>>() 
-            ?? throw new InvalidOperationException("AIServices:MCPTool:AllowedTools is not configured in appsettings.json");
+        // Read allowed tools from indexed configuration keys
+        _mcpAllowedTools = new List<string>();
+        int i = 0;
+        while (true)
+        {
+            var tool = configuration[$"AIServicesMCPToolAllowedTools{i}"];
+            if (string.IsNullOrEmpty(tool))
+                break;
+            _mcpAllowedTools.Add(tool);
+            i++;
+        }
+        
+        if (_mcpAllowedTools.Count == 0)
+            throw new InvalidOperationException("AIServicesMCPToolAllowedTools is not configured in appsettings.json");
 
         // Read Elastic API key
-        _elasticApiKey = configuration["AIServices:ElasticApiKey"] 
-            ?? throw new InvalidOperationException("AIServices:ElasticApiKey is not configured in appsettings.json");
+        _elasticApiKey = configuration["AIServicesElasticApiKey"] 
+            ?? throw new InvalidOperationException("AIServicesElasticApiKey is not configured in appsettings.json");
 
         _logger.LogInformation("Initializing Azure AI Agent Service with endpoint: {Endpoint}", _endpoint);
         

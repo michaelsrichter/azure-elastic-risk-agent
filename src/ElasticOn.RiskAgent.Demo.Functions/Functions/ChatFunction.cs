@@ -76,7 +76,26 @@ public class ChatFunction
 
             #region Content Safety - Jailbreak Detection on User Prompt
 
+            // Determine detection mode: use request override if provided, otherwise use configuration
             var detectionMode = _contentSafetyService.DetectionMode;
+            if (!string.IsNullOrWhiteSpace(request.ContentSafetyMode))
+            {
+                if (Enum.TryParse<JailbreakDetectionMode>(request.ContentSafetyMode, true, out var requestedMode))
+                {
+                    detectionMode = requestedMode;
+                    _logger.LogInformation("Using Content Safety mode from request: {Mode} (overriding configuration)", detectionMode);
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid ContentSafetyMode '{Mode}' in request, using configuration default: {DefaultMode}", 
+                        request.ContentSafetyMode, detectionMode);
+                }
+            }
+            else
+            {
+                _logger.LogInformation("Using Content Safety mode from configuration: {Mode}", detectionMode);
+            }
+            
             var detectionResult = new JailbreakDetectionResult { IsJailbreakDetected = false };
 
             if (detectionMode != JailbreakDetectionMode.Disabled)
@@ -90,9 +109,30 @@ public class ChatFunction
 
                     if (detectionMode == JailbreakDetectionMode.Enforce)
                     {
-                        return await CreateErrorResponse(req, 
-                            "Your message has been flagged by our content safety system. Please rephrase your question.", 
-                            HttpStatusCode.BadRequest);
+                        // Enforce mode: Return security alert message instead of blocking
+                        _logger.LogWarning("Returning security alert due to user prompt jailbreak detection in Enforce mode");
+                        var securityAlertMessage = "⚠️ Your message has been flagged by our content safety system. Please rephrase your question.";
+                        
+                        // Convert markdown to HTML
+                        var pipeline = new MarkdownPipelineBuilder()
+                            .UseAdvancedExtensions()
+                            .Build();
+                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, pipeline);
+                        
+                        var response = req.CreateResponse(HttpStatusCode.OK);
+                        response.Headers.Add("Content-Type", "application/json");
+                        
+                        var responseData = new SendMessageResponse
+                        {
+                            Success = true,
+                            Message = securityAlertMessage,
+                            MessageHtml = securityAlertHtml,
+                            ThreadId = request.ThreadId // Use request ThreadId since we haven't created one yet
+                        };
+                        
+                        var json = JsonSerializer.Serialize(responseData, GetJsonOptions());
+                        await response.WriteStringAsync(json, cancellationToken);
+                        return response;
                     }
                     
                     _logger.LogWarning("Jailbreak detected but continuing in Audit mode");
@@ -233,11 +273,119 @@ public class ChatFunction
 
             #endregion
 
+            #region Content Safety - Analyze MCP Tool Call Outputs
+
+            // Collect MCP tool call outputs for jailbreak analysis
+            var mcpToolOutputs = new List<string>();
+            
+            var runSteps = _client.Runs.GetRunStepsAsync(run);
+            await foreach (var step in runSteps)
+            {
+                // Check if this is a tool call step
+                if (step.StepDetails is RunStepToolCallDetails toolCallDetails)
+                {
+                    _logger.LogInformation("Tool Call Step - Tool Calls Count: {Count}", toolCallDetails.ToolCalls.Count);
+
+                    foreach (var toolCall in toolCallDetails.ToolCalls)
+                    {
+                        if (toolCall is RunStepMcpToolCall mcpToolCall)
+                        {
+                            _logger.LogInformation("MCP Tool Call in Step:");
+                            _logger.LogInformation("  Tool ID: {ToolId}", mcpToolCall.Id);
+                            _logger.LogInformation("  Tool Name: {ToolName}", mcpToolCall.Name);
+                            _logger.LogInformation("  Tool Arguments: {Arguments}", mcpToolCall.Arguments);
+                            
+                            var outputPreview = mcpToolCall.Output ?? "(null)";
+                            if (outputPreview.Length > 100)
+                            {
+                                outputPreview = outputPreview.Substring(0, 100) + "...";
+                            }
+                            _logger.LogInformation("  Tool Output: {Output}", outputPreview);
+
+                            // Collect outputs for content safety analysis
+                            if (!string.IsNullOrWhiteSpace(mcpToolCall.Output))
+                            {
+                                mcpToolOutputs.Add(mcpToolCall.Output);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Analyze MCP tool outputs if any were collected (and detection is not disabled)
+            JailbreakDetectionResult? toolOutputDetectionResult = null;
+            if (mcpToolOutputs.Count > 0 && detectionMode != JailbreakDetectionMode.Disabled)
+            {
+                // Extract text content from JSON outputs to save characters and focus on actual content
+                var extractedTexts = new List<string>();
+                int originalTotalLength = 0;
+                
+                foreach (var output in mcpToolOutputs)
+                {
+                    originalTotalLength += output.Length;
+                    var extractedText = ExtractTextFromJson(output);
+                    if (!string.IsNullOrWhiteSpace(extractedText))
+                    {
+                        extractedTexts.Add(extractedText);
+                    }
+                }
+                
+                // Combine all extracted text into a single document for analysis
+                var combinedOutput = string.Join("\n\n", extractedTexts);
+                
+                _logger.LogInformation("Analyzing MCP tool outputs (extracted {ExtractedLength} chars from {OriginalLength} original chars, {Count} tool calls) for jailbreak attempts in conversation {ConversationId} (Mode: {Mode})", 
+                    combinedOutput.Length, originalTotalLength, mcpToolOutputs.Count, conversationId, detectionMode);
+
+                toolOutputDetectionResult = await _contentSafetyService.DetectJailbreakAsync(
+                    combinedOutput, 
+                    cancellationToken);
+
+                if (toolOutputDetectionResult.IsJailbreakDetected)
+                {
+                    _logger.LogWarning("Jailbreak attempt detected in MCP tool outputs for conversation {ConversationId}. Mode: {Mode}", 
+                        conversationId, detectionMode);
+
+                    if (detectionMode == JailbreakDetectionMode.Enforce)
+                    {
+                        // Enforce mode: Return security alert message instead of blocking
+                        _logger.LogWarning("Returning security alert due to Enforce mode");
+                        var securityAlertMessage = $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\nOffending text:\n\"{toolOutputDetectionResult.OffendingText}\"";
+                        
+                        // Convert markdown to HTML
+                        var pipeline = new MarkdownPipelineBuilder()
+                            .UseAdvancedExtensions()
+                            .Build();
+                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, pipeline);
+                        
+                        var response = req.CreateResponse(HttpStatusCode.OK);
+                        response.Headers.Add("Content-Type", "application/json");
+                        
+                        var responseData = new SendMessageResponse
+                        {
+                            Success = true,
+                            Message = securityAlertMessage,
+                            MessageHtml = securityAlertHtml,
+                            ThreadId = threadId
+                        };
+                        
+                        var json = JsonSerializer.Serialize(responseData, GetJsonOptions());
+                        await response.WriteStringAsync(json, cancellationToken);
+                        return response;
+                    }
+                    // Audit mode: Continue processing but will note the detection in the response
+                }
+                else
+                {
+                    _logger.LogDebug("No jailbreak detected in MCP tool outputs for conversation {ConversationId}", conversationId);
+                }
+            }
+
+            #endregion
+
             #region Get Response Messages
 
             // Get the assistant's response from the thread
             var responseTextBuilder = new System.Text.StringBuilder();
-            var mcpToolOutputs = new List<string>();
             var messagesPage = _client.Messages.GetMessagesAsync(
                 threadId: threadId,
                 order: ListSortOrder.Ascending);
@@ -253,13 +401,6 @@ public class ChatFunction
                         if (contentItem is MessageTextContent textItem)
                         {
                             responseTextBuilder.Append(textItem.Text);
-                            
-                            // Also collect for content safety analysis
-                            var extractedText = ExtractTextFromJson(textItem.Text);
-                            if (!string.IsNullOrWhiteSpace(extractedText))
-                            {
-                                mcpToolOutputs.Add(extractedText);
-                            }
                         }
                     }
                 }
@@ -273,39 +414,6 @@ public class ChatFunction
             }
 
             _logger.LogInformation("Successfully processed message for conversation {ConversationId}", conversationId);
-
-            #endregion
-
-            #region Content Safety - Analyze Response Content
-
-            // Analyze the response content for jailbreak attempts
-            JailbreakDetectionResult? toolOutputDetectionResult = null;
-            if (mcpToolOutputs.Count > 0 && detectionMode != JailbreakDetectionMode.Disabled)
-            {
-                var combinedOutput = string.Join("\n\n", mcpToolOutputs);
-                _logger.LogInformation("Running jailbreak detection on response content (length: {Length}) in {Mode} mode",
-                    combinedOutput.Length, detectionMode);
-
-                toolOutputDetectionResult = await _contentSafetyService.DetectJailbreakAsync(combinedOutput, cancellationToken);
-
-                if (toolOutputDetectionResult.IsJailbreakDetected)
-                {
-                    _logger.LogWarning("Jailbreak attempt detected in response content for conversation {ConversationId}", conversationId);
-
-                    if (detectionMode == JailbreakDetectionMode.Enforce)
-                    {
-                        return await CreateErrorResponse(req,
-                            "The response from the system has been flagged by our content safety system. Please try a different question.",
-                            HttpStatusCode.BadRequest);
-                    }
-                    
-                    _logger.LogWarning("Jailbreak detected in response content but continuing in Audit mode");
-                }
-                else
-                {
-                    _logger.LogInformation("No jailbreak detected in response content");
-                }
-            }
 
             #endregion
 

@@ -17,7 +17,7 @@ public interface IAzureAIAgentService
     /// </summary>
     /// <param name="agentId">Optional agent ID. If null or agent doesn't exist, creates a new agent.</param>
     /// <returns>The agent ID</returns>
-    Task<string> GetOrCreateAgentAsync(string? agentId = null);
+    Task<string> GetOrCreateAgentAsync(string agentId = null);
 
     /// <summary>
     /// Gets the Elastic API key from configuration
