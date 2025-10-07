@@ -1,32 +1,56 @@
 # ElasticOn Risk Agent Demo
 
-ElasticOn Risk Agent Demo is a .NET 9 solution that demonstrates PDF document processing capabilities for risk assessment workflows. The solution includes Azure Functions for PDF intake, comprehensive unit tests, and a placeholder for future agent framework integration.
+ElasticOn Risk Agent Demo is a comprehensive .NET 9 solution that demonstrates AI-powered risk assessment workflows using Azure AI, Elasticsearch, and Microsoft 365 integration. The solution provides PDF document processing, intelligent chat capabilities, and Teams bot integration for risk analysis.
+
+## Solution Overview
+
+This solution consists of three main applications and comprehensive testing infrastructure:
+
+1. **Azure Functions** - Serverless API for document processing and chat interactions
+2. **Microsoft 365 Teams Bot** - Teams-integrated bot for risk assessment queries
+3. **Blazor WebAssembly App** - Modern web interface for risk analysis chat
+4. **Comprehensive Testing** - Unit tests ensuring reliability and correctness
 
 ## Solution Structure
 
 - `ElasticOn.RiskAgent.Demo.sln` – root solution file
-- `src/ElasticOn.RiskAgent.Demo.Functions` – Azure Functions isolated worker app with PDF processing capabilities
-- `src/ElasticOn.RiskAgent.Demo.Agent` – placeholder Microsoft Agent Framework project (implementation coming soon)
+- `src/ElasticOn.RiskAgent.Demo.Functions` – Azure Functions app with PDF processing, document indexing, and chat API
+- `src/ElasticOn.RiskAgent.Demo.M365` – Microsoft Teams bot for risk assessment queries
+- `src/ElasticOn.RiskAgent.Demo.Web` – Blazor WebAssembly chat interface
 - `tests/ElasticOn.RiskAgent.Demo.Functions.Tests` – comprehensive unit tests for the Functions project
+- `M365Agent` – Microsoft 365 Agents Toolkit configuration for Teams deployment
 
-## Azure Functions Project (`ElasticOn.RiskAgent.Demo.Functions`)
+## 1. Azure Functions Project (`ElasticOn.RiskAgent.Demo.Functions`)
 
 ### Purpose
-The Functions project provides a cloud-ready HTTP API for processing PDF documents with associated metadata. It's designed to handle PDF document intake for risk assessment workflows.
+The Functions project provides a cloud-ready HTTP API for processing PDF documents, indexing them to Elasticsearch, and providing an intelligent chat interface powered by Azure AI Foundry. It serves as the backend for both the web application and Teams bot.
 
 ### Key Components
 
-#### `ProcessPdfFunction`
+#### HTTP Functions
+
+##### `ProcessPdfFunction`
 - **Endpoint**: `POST /api/process-pdf`
 - **Purpose**: Accepts PDF documents encoded as Base64 strings along with structured metadata
 - **Processing**: Validates input, decodes PDF content, extracts text from all pages, performs text chunking with configurable overlap, and processes metadata as strongly-typed objects
 - **Response**: Returns structured information about the processed document including chunking statistics
 
-#### `IndexDocumentFunction`
+##### `IndexDocumentFunction`
 - **Endpoint**: `POST /api/index-document`
 - **Purpose**: Indexes document chunks with metadata into Elasticsearch
 - **Processing**: Accepts document chunk data and stores it in Elasticsearch for search and retrieval
 - **Response**: Returns document ID and indexing status
+
+##### `ChatFunction`
+- **Endpoint**: `POST /api/chat`
+- **Purpose**: Provides an AI-powered chat interface for risk assessment queries
+- **Features**:
+  - Azure AI Foundry Agent integration with GPT-4 models
+  - Elasticsearch MCP (Model Context Protocol) tool integration for document retrieval
+  - Azure Content Safety for jailbreak detection and content moderation
+  - Conversation state management across multiple turns
+  - Streaming response support
+- **Response**: Returns agent responses with referenced documents from Elasticsearch
 
 #### `ProcessPdfParser` (Service)
 - **Purpose**: Orchestrates PDF processing workflow including Base64 decoding, text extraction, and chunking
@@ -150,9 +174,71 @@ The solution includes Elasticsearch integration for indexing processed document 
 - **Configuration** - Supports configurable Elasticsearch URI, API key, and index name
 - **Document ID Generation** - Automatic generation of unique IDs based on filename, page number, and chunk number
 
-For detailed information about the IndexDocument function, see [docs/IndexDocumentFunction-README.md](docs/IndexDocumentFunction-README.md).
+For detailed information, see:
+- [docs/IndexDocumentFunction-README.md](docs/IndexDocumentFunction-README.md) - IndexDocument function details
+- [docs/ProcessPdfFunction-IndexDocument-README.md](docs/ProcessPdfFunction-IndexDocument-README.md) - ProcessPdf function details
+- [docs/ChatFunction-README.md](docs/ChatFunction-README.md) - Chat function details
+- [docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md](docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md) - Elasticsearch configuration examples
 
-## Tests Project (`ElasticOn.RiskAgent.Demo.Functions.Tests`)
+## 2. Microsoft Teams Bot (`ElasticOn.RiskAgent.Demo.M365`)
+
+### Purpose
+The M365 project provides a Microsoft Teams bot that integrates with Azure AI Foundry Agent for intelligent risk assessment conversations directly within Teams.
+
+### Key Features
+
+#### Teams Bot Integration
+- **RiskAgentBot** - Teams Activity Handler for processing user messages
+- **Conversation State Management** - Maintains agent and thread IDs across conversations
+- **Adaptive Cards** - Rich message formatting with action buttons
+- **Error Handling** - Graceful error messages and retry logic
+
+#### AI Services
+- **Azure AI Foundry Agent** - GPT-4 based agent for answering risk-related questions
+- **Elasticsearch MCP Integration** - Retrieves relevant documents from Elasticsearch
+- **Content Safety** - Azure Content Safety for jailbreak detection and content moderation
+- **Configurable Detection Modes** - Disabled, Audit, or Enforce modes for content safety
+
+#### Configuration
+The bot requires configuration in `appsettings.json`:
+- **AIServices:ProjectEndpoint** - Azure AI Foundry project endpoint
+- **AIServices:ModelId** - Model deployment ID (e.g., "gpt-4.1-mini")
+- **AIServices:MCPTool** - Elasticsearch MCP server configuration
+- **ContentSafety** - Content Safety endpoint and subscription key
+- **MicrosoftAppId** and **MicrosoftAppPassword** - Teams bot credentials
+
+For detailed information, see:
+- [docs/M365-IMPLEMENTATION_SUMMARY.md](docs/M365-IMPLEMENTATION_SUMMARY.md) - Implementation overview
+- [docs/M365-CONFIGURATION_GUIDE.md](docs/M365-CONFIGURATION_GUIDE.md) - Configuration details
+- [docs/M365-AGENT_INTEGRATION.md](docs/M365-AGENT_INTEGRATION.md) - Agent integration details
+- [docs/M365-SETUP_SECRETS.md](docs/M365-SETUP_SECRETS.md) - Secret management
+
+## 3. Blazor WebAssembly App (`ElasticOn.RiskAgent.Demo.Web`)
+
+### Purpose
+The Web project provides a modern, responsive chat interface for risk analysis powered by the Azure Functions backend.
+
+### Key Features
+
+#### Chat Interface
+- **Real-time Chat** - Interactive chat interface with message history
+- **Conversation Management** - State management with conversation and thread IDs
+- **Thinking Indicators** - Visual feedback while processing requests
+- **Keyboard Support** - Enter to send, Shift+Enter for new lines
+- **Responsive Design** - Modern gradient design with purple theme
+
+#### Configuration
+- **HttpClient** - Configured to call Azure Functions Chat API
+- **Development Mode** - Points to `http://localhost:7071`
+- **Production Mode** - Configured for Azure deployment
+- **ChatStateService** - Singleton service for state management
+
+For detailed information, see:
+- [docs/Web-README.md](docs/Web-README.md) - Web application overview
+- [docs/Web-CLARITY_SETUP.md](docs/Web-CLARITY_SETUP.md) - Microsoft Clarity setup
+- [docs/Web-LAYOUT_UPDATES.md](docs/Web-LAYOUT_UPDATES.md) - Layout updates
+
+## 4. Tests Project (`ElasticOn.RiskAgent.Demo.Functions.Tests`)
 
 ### Purpose
 Provides comprehensive unit testing for the Functions project, ensuring reliability and correctness of PDF processing logic.
@@ -185,37 +271,147 @@ Provides comprehensive unit testing for the Functions project, ensuring reliabil
 ### Test Data
 The tests utilize a sample PDF request file (`samplePdfFileRequest.json`) that contains essential document metadata and Base64-encoded PDF content.
 
+## Architecture
+
+The solution uses a microservices architecture with the following components:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    User Interfaces                      │
+│  ┌──────────────────┐         ┌────────────────────┐  │
+│  │  Blazor WASM App │         │ Microsoft Teams    │  │
+│  │  (Web Frontend)  │         │ (M365 Bot)         │  │
+│  └────────┬─────────┘         └─────────┬──────────┘  │
+└───────────┼───────────────────────────────┼─────────────┘
+            │                               │
+            ▼                               ▼
+┌─────────────────────────────────────────────────────────┐
+│              Azure Functions (Backend API)              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │ ProcessPdf   │  │ IndexDocument│  │ Chat         │ │
+│  │ Function     │  │ Function     │  │ Function     │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────┬────────────────┬────────────────┬────────────┘
+          │                │                │
+          ▼                ▼                ▼
+┌─────────────────────────────────────────────────────────┐
+│                    External Services                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │ Elasticsearch│  │ Azure AI     │  │ Azure Content│ │
+│  │ (Indexing &  │  │ Foundry      │  │ Safety       │ │
+│  │  Search)     │  │ (Agent)      │  │ (Moderation) │ │
+│  └──────────────┘  └──────────────┘  └──────────────┘ │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Key Technologies
+- **.NET 9** - Modern C# for all components
+- **Azure Functions** - Serverless compute with Flex Consumption plan
+- **Azure AI Foundry** - Agent framework with GPT-4 models
+- **Elasticsearch** - Document indexing and semantic search
+- **Azure Content Safety** - Content moderation and jailbreak detection
+- **Microsoft Teams Bot Framework** - Teams integration
+- **Blazor WebAssembly** - Modern web UI framework
+
 ## Prerequisites
 
-- .NET SDK 9 preview or later.
-- Azure Functions Core Tools v4 when running the function locally.
+### Development Environment
+- **.NET SDK 9** or later
+- **Azure Functions Core Tools v4** for running functions locally
+- **Visual Studio 2022** or **VS Code** with C# extension
+- **Node.js** (for some development tools)
 
-## Local development
+### Azure Services (for deployment)
+- **Azure Subscription** with appropriate permissions
+- **Azure AI Foundry** project with deployed model
+- **Elasticsearch** cluster (cloud or self-hosted)
+- **Azure Content Safety** resource (optional, can be disabled)
 
-Restore dependencies and build the solution:
+## Local Development
+
+### Build the Solution
+
+Restore dependencies and build all projects:
 
 ```bash
 dotnet build ElasticOn.RiskAgent.Demo.sln
 ```
 
-To run the Azure Functions host locally:
+### Run the Azure Functions (Backend)
 
 ```bash
 cd src/ElasticOn.RiskAgent.Demo.Functions
 func start
 ```
 
-> `local.settings.json` contains only development defaults and is excluded from version control. Provide your own values as needed.
+The Functions API will be available at `http://localhost:7071`
+
+### Run the Blazor Web App
+
+```bash
+cd src/ElasticOn.RiskAgent.Demo.Web
+dotnet run
+```
+
+The web app will be available at `https://localhost:7227` (or similar port)
+
+### Run the Teams Bot
+
+```bash
+cd src/ElasticOn.RiskAgent.Demo.M365
+dotnet run
+```
+
+For Teams integration, see [M365Agent/README.md](M365Agent/README.md) for deployment with Microsoft 365 Agents Toolkit.
+
+### Configuration Files
+
+All projects use configuration files that are excluded from version control. You'll need to create:
+
+- `src/ElasticOn.RiskAgent.Demo.Functions/local.settings.json` - Functions configuration
+- `src/ElasticOn.RiskAgent.Demo.M365/appsettings.Development.json` - M365 bot configuration
+- `src/ElasticOn.RiskAgent.Demo.Web/wwwroot/appsettings.Development.json` - Web app configuration (if needed)
+
+See the respective project documentation in `/docs` for configuration details.
+
+## Key Features
+
+### PDF Document Processing
+- **Base64 decoding** with URL-safe character handling
+- **Text extraction** from all PDF pages with multiple extraction methods
+- **Intelligent chunking** with configurable size and overlap
+- **Metadata processing** with strongly-typed models
+- **Automatic indexing** to Elasticsearch with retry logic
+
+### AI-Powered Chat
+- **Azure AI Foundry Agent** integration with GPT-4 models
+- **Elasticsearch MCP** for retrieving relevant documents
+- **Conversation state management** across multiple turns
+- **Streaming responses** for real-time interaction
+- **Content Safety** with jailbreak detection and moderation
+
+### Enterprise Features
+- **Azure Content Safety** - Configurable detection modes (Disabled, Audit, Enforce)
+- **Application Insights** - Comprehensive logging and monitoring
+- **Managed Identity** - Secure authentication to Azure services
+- **Error Handling** - Graceful error messages and retry logic
+- **Configurable** - Extensive configuration options for all services
+
+### Multiple Interfaces
+- **Azure Functions API** - RESTful API for all operations
+- **Microsoft Teams Bot** - Native Teams integration
+- **Blazor WebAssembly** - Modern responsive web interface
 
 ## Azure Deployment
 
-This project includes Azure Developer CLI (azd) support for easy deployment to Azure Functions with Flex Consumption plan.
+This project includes Azure Developer CLI (azd) support for easy deployment to Azure.
 
 ### Quick Start
 
-1. **Setup Environment**: Run the automated setup script
+1. **Login to Azure**:
    ```bash
-   ./scripts/setup-azd-environment.sh
+   az login
+   azd auth login
    ```
 
 2. **Deploy to Azure**: Deploy infrastructure and application
@@ -228,45 +424,75 @@ This project includes Azure Developer CLI (azd) support for easy deployment to A
    ./scripts/update-elasticsearch-secrets.sh
    ```
 
-### Deployment with Restricted Storage Access
-
-If your organization has policies that disable public network access to storage accounts, the standard `azd deploy` command will fail with:
-
-```
-ERROR: failed deploying service 'api': publishing zip file: deployment failed: 
-InaccessibleStorageException: Failed to access storage account for deployment: 
-BlobUploadFailedException: Failed to upload blob to storage account: 
-Response status code does not indicate success: 403 (This request is not authorized to perform this operation.)
-```
-
-**Solution**: Use the deployment script that enables public access:
-
-```bash
-./scripts/deploy-with-restricted-storage.sh
-```
-
-This script:
-1. Detects the current public network access setting on the storage account
-2. Enables public network access if it's currently disabled
-3. Runs `azd deploy` to deploy your application
-4. Leaves public access enabled for future deployments
-
-**Note**: Public network access will remain enabled after deployment. This is necessary for the Azure Functions Flex Consumption plan to access the deployment package. You can manually disable it later if needed, but you'll need to re-enable it for subsequent deployments.
-
 ### What Gets Deployed
 
-- **Azure Functions App** (Flex Consumption plan)
-- **Azure OpenAI Service** with text-embedding-ada-002 model
-- **Application Insights** for monitoring and logging
-- **Storage Account** with managed identity authentication
+- **Azure Functions App** (Flex Consumption plan) - Backend API
+- **Azure OpenAI Service** with text-embedding-ada-002 model - Embeddings for Elasticsearch
+- **Application Insights** - Monitoring and logging
+- **Storage Account** - Function app storage with managed identity
 
 > **Note**: Azure Key Vault is not currently used due to Flex Consumption plan limitations.  
-> Secrets are stored directly in Function App settings. See [TODO_KEYVAULT_INTEGRATION.md](docs/TODO_KEYVAULT_INTEGRATION.md) for future plans.
+> Secrets are stored directly in Function App settings.
 
-For detailed deployment instructions, see [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md).
+### Deployment Scripts
 
-## Next steps
+- `./scripts/setup-azd-environment.sh` - Verify Azure CLI authentication
+- `./scripts/deploy-with-restricted-storage.sh` - Deploy with storage access restrictions
+- `./scripts/update-elasticsearch-secrets.sh` - Update Elasticsearch configuration
 
-- Flesh out the Microsoft Agent Framework app in `ElasticOn.RiskAgent.Demo.Agent`.
-- Connect the function output to the agent workflow.
-- Scale the deployment for production workloads.
+For complete deployment instructions including Teams bot and web app deployment, see [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md).
+
+## Documentation
+
+Comprehensive documentation is available in the `/docs` directory:
+
+### Getting Started
+- [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md) - Complete deployment guide
+- [docs/README.md](docs/README.md) - Documentation index
+
+### Function Documentation
+- [docs/ChatFunction-README.md](docs/ChatFunction-README.md) - Chat API details
+- [docs/ProcessPdfFunction-IndexDocument-README.md](docs/ProcessPdfFunction-IndexDocument-README.md) - PDF processing
+- [docs/IndexDocumentFunction-README.md](docs/IndexDocumentFunction-README.md) - Document indexing
+
+### M365 Bot Documentation
+- [docs/M365-IMPLEMENTATION_SUMMARY.md](docs/M365-IMPLEMENTATION_SUMMARY.md) - Implementation overview
+- [docs/M365-CONFIGURATION_GUIDE.md](docs/M365-CONFIGURATION_GUIDE.md) - Configuration guide
+- [docs/M365-AGENT_INTEGRATION.md](docs/M365-AGENT_INTEGRATION.md) - Agent integration
+
+### Web App Documentation
+- [docs/Web-README.md](docs/Web-README.md) - Web application overview
+
+### Reference Documentation
+- [docs/ContentSafety.md](docs/ContentSafety.md) - Content Safety implementation
+- [docs/CUSTOM_ELASTICSEARCH_INDEX.md](docs/CUSTOM_ELASTICSEARCH_INDEX.md) - Custom Elasticsearch configuration
+- [docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md](docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md) - Configuration examples
+
+## Next Steps
+
+### For New Users
+1. Review the [Architecture](#architecture) section above
+2. Follow the [Azure Deployment](#azure-deployment) quick start
+3. Configure Elasticsearch and Azure services
+4. Test the deployment with provided sample data
+
+### For Developers
+1. Build and run the solution locally
+2. Review function documentation in `/docs`
+3. Explore the test suite for examples
+4. Extend with custom features
+
+### Future Enhancements
+- Scale the deployment for production workloads
+- Implement additional document formats beyond PDF
+- Add more sophisticated risk assessment models
+- Integrate with additional data sources
+- Implement Azure Key Vault when Flex Consumption supports it
+
+## Contributing
+
+This is a demonstration project showcasing Azure AI and Elasticsearch integration. Feel free to use it as a starting point for your own risk assessment solutions.
+
+## License
+
+See [LICENSE](LICENSE) file for details.
