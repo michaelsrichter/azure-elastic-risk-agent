@@ -4,10 +4,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
+
+// Configure JSON serialization to handle camelCase from JavaScript/Blazor
+builder.Services.Configure<JsonSerializerOptions>(options =>
+{
+    options.PropertyNameCaseInsensitive = true;
+    options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+});
 
 // Configure logging - critical for Azure Functions isolated worker model
 builder.Logging.ClearProviders();
@@ -55,8 +66,34 @@ builder.Services
 builder.Services
     .AddScoped<ProcessPdfParser>();
 
+// Register Azure AI Agent services for Chat function
+builder.Services
+    .AddSingleton<IAzureAIAgentService, AzureAIAgentService>();
+
+builder.Services
+    .AddSingleton<IContentSafetyService, ContentSafetyService>();
+
+// Register conversation state service (in-memory for now)
+builder.Services
+    .AddSingleton<IChatStateService, ChatStateService>();
+
 // Configure HttpClient with proper SSL handling for development
 builder.Services.AddHttpClient("default")
+    .ConfigurePrimaryHttpMessageHandler(() =>
+    {
+        var handler = new HttpClientHandler();
+        
+        // For development environments, allow untrusted certificates
+        if (builder.Environment.IsDevelopment())
+        {
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+        }
+        
+        return handler;
+    });
+
+// Configure HttpClient for Content Safety Service
+builder.Services.AddHttpClient("ContentSafetyClient")
     .ConfigurePrimaryHttpMessageHandler(() =>
     {
         var handler = new HttpClientHandler();

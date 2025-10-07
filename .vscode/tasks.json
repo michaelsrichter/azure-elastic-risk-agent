@@ -1,0 +1,74 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "clean",
+            "command": "dotnet",
+            "args": [
+                "clean",
+                "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions/ElasticOn.RiskAgent.Demo.Functions.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "type": "process",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions/ElasticOn.RiskAgent.Demo.Functions.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "type": "process",
+            "dependsOn": "clean",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "clean release",
+            "command": "dotnet",
+            "args": [
+                "clean",
+                "--configuration",
+                "Release",
+                "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions/ElasticOn.RiskAgent.Demo.Functions.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "type": "process",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "args": [
+                "publish",
+                "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions/ElasticOn.RiskAgent.Demo.Functions.csproj",
+                "--configuration",
+                "Release",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "type": "process",
+            "dependsOn": "clean release",
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "type": "func",
+            "label": "func: host start",
+            "command": "host start",
+            "problemMatcher": "$func-dotnet-watch",
+            "isBackground": true,
+            "dependsOn": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions"
+            }
+        }
+    ]
+}

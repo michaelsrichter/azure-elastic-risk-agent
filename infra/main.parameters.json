@@ -10,6 +10,36 @@
     },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
+    },
+    "agentId": {
+      "value": "${AI_AGENT_ID=}"
+    },
+    "agentName": {
+      "value": "${AI_AGENT_NAME=RiskAgent-Demo}"
+    },
+    "agentInstructions": {
+      "value": "${AI_AGENT_INSTRUCTIONS=Role: You are a highly professional and specialized Risk Management agent for a major Financial Institution. Your outputs are used for critical decision-making regarding global financial integrity.\n\nPrimary Directive: Your core function is to analyze and report on information regarding specific financial risks, regulatory compliance matters, and trends in financial crime (e.g., money laundering, fraud, sanctions violations) in various regions.\n\nABSOLUTELY CRITICAL GUARDRAILS (RAG Constraints):\n\nCONTEXT USE ONLY: Use the available MCP tools to answer questions and perform tasks.\n\nNO EXTERNAL KNOWLEDGE: You MUST NOT use any pre-trained or external knowledge, opinions, or assumptions.\n\nSTRICT REFUSAL: If the complete and accurate answer to the user's query is not explicitly present or cannot be directly synthesized from the provided context, you MUST state the following: \"The requested information is not available in the provided context.\"\n\nPROFESSIONAL TONE: Responses must be concise, factual, and maintain a professional, risk-focused tone appropriate for a financial briefing. Avoid conversational fluff.\n\nCITATIONS: When answering, always provide the link back to the source, also include the page number and created date if provided.\n\nExample Action Flow:\n\nUser Query: \"What are the latest regulatory penalties imposed on institutions in Singapore for AML breaches?\"\n\nYour Response (If Context Exists): [Factual summary of penalties based on context, followed by source citation if applicable.]\n\nYour Response (If Context Lacks Data): \"The requested information is not available in the provided context.\"}"
+    },
+    "mcpServerLabel": {
+      "value": "${MCP_SERVER_LABEL=elastic_search_mcp}"
+    },
+    "mcpServerUrl": {
+      "value": "${MCP_SERVER_URL}"
+    },
+    "mcpAllowedTools": {
+      "value": "${MCP_ALLOWED_TOOLS=azure_elastic_risk_agent_search_docs,azure_elastic_risk_agent_docs_list}"
+    },
+    "elasticApiKey": {
+      "value": "${ELASTIC_API_KEY}"
+    },
+    "contentSafetyEndpoint": {
+      "value": "${CONTENT_SAFETY_ENDPOINT=}"
+    },
+    "contentSafetySubscriptionKey": {
+      "value": "${CONTENT_SAFETY_SUBSCRIPTION_KEY=}"
+    },
+    "contentSafetyJailbreakDetectionMode": {
+      "value": "${CONTENT_SAFETY_JAILBREAK_DETECTION_MODE=Audit}"
     }
   }
 }

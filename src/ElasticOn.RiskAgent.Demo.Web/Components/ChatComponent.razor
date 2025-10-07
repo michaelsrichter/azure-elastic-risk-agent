@@ -1,0 +1,228 @@
+@using ElasticOn.RiskAgent.Demo.Web.Models
+@using ElasticOn.RiskAgent.Demo.Web.Services
+@using Microsoft.AspNetCore.Components
+@inject HttpClient Http
+@inject ChatStateService ChatState
+
+<div class="chat-container">
+    <div class="chat-messages" @ref="messagesContainer">
+        @if (messages.Count == 0)
+        {
+            <div class="welcome-message">
+                <h2>Welcome! 👋</h2>
+                <p>Ask me anything about risk analysis, compliance, or security assessments.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var message in messages)
+            {
+                <div class="message @message.Role">
+                    <div class="message-content">
+                        @if (message.IsThinking)
+                        {
+                            <div class="thinking-indicator">
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                                <span class="dot"></span>
+                            </div>
+                        }
+                        else if (message.Role == "assistant")
+                        {
+                            @((MarkupString)message.Content)
+                        }
+                        else
+                        {
+                            @message.Content
+                        }
+                    </div>
+                    <div class="message-time">@message.Timestamp.ToLocalTime().ToString("h:mm tt")</div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="chat-input-container">
+        <div class="input-wrapper">
+            <input type="text" 
+                   class="chat-input" 
+                   placeholder="Type your risk analysis question..."
+                   @bind="currentMessage"
+                   @bind:event="oninput"
+                   @onkeypress="HandleKeyPress"
+                   disabled="@isProcessing" />
+            <button class="send-button" 
+                    @onclick="SendMessage" 
+                    disabled="@(isProcessing || string.IsNullOrWhiteSpace(currentMessage))">
+                @if (isProcessing)
+                {
+                    <span class="spinner"></span>
+                }
+                else
+                {
+                    <span>Send</span>
+                }
+            </button>
+        </div>
+        
+        @if (messages.Count == 0)
+        {
+            <div class="sample-prompts">
+                <span class="prompts-label">Try asking:</span>
+                @foreach (var prompt in samplePrompts)
+                {
+                    <button class="prompt-button" @onclick="() => SelectPrompt(prompt)">
+                        @prompt
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ChatMessage> messages = new();
+    private string currentMessage = string.Empty;
+    private bool isProcessing = false;
+    private ElementReference messagesContainer;
+
+    private readonly string[] samplePrompts = new[]
+    {
+        "Prompt A",
+        "Prompt B", 
+        "Prompt C"
+    };
+
+    protected override void OnInitialized()
+    {
+        // Initialize conversation state on page load
+        var conversationId = ChatState.ConversationId;
+    }
+
+    private void SelectPrompt(string prompt)
+    {
+        currentMessage = prompt;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isProcessing && !string.IsNullOrWhiteSpace(currentMessage))
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(currentMessage) || isProcessing)
+            return;
+
+        var userMessage = currentMessage.Trim();
+        currentMessage = string.Empty;
+        isProcessing = true;
+
+        // Add user message to the chat
+        messages.Add(new ChatMessage
+        {
+            Role = "user",
+            Content = userMessage,
+            Timestamp = DateTime.UtcNow
+        });
+
+        // Add thinking indicator
+        var thinkingMessage = new ChatMessage
+        {
+            Role = "assistant",
+            Content = "Thinking...",
+            IsThinking = true,
+            Timestamp = DateTime.UtcNow
+        };
+        messages.Add(thinkingMessage);
+
+        StateHasChanged();
+        await ScrollToBottom();
+
+        try
+        {
+            // Prepare request
+            var request = new SendMessageRequest
+            {
+                Message = userMessage,
+                ConversationId = ChatState.ConversationId,
+                ThreadId = ChatState.ThreadId
+            };
+
+            // Call the Azure Function API (endpoint will be configured later)
+            var response = await Http.PostAsJsonAsync("/api/chat", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<SendMessageResponse>();
+
+                if (result != null && result.Success)
+                {
+                    // Update thread ID if this is the first message
+                    if (string.IsNullOrEmpty(ChatState.ThreadId) && !string.IsNullOrEmpty(result.ThreadId))
+                    {
+                        ChatState.ThreadId = result.ThreadId;
+                    }
+
+                    // Remove thinking indicator and add actual response
+                    messages.Remove(thinkingMessage);
+                    messages.Add(new ChatMessage
+                    {
+                        Role = "assistant",
+                        Content = result.MessageHtml,
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+                else
+                {
+                    // Show error message
+                    messages.Remove(thinkingMessage);
+                    messages.Add(new ChatMessage
+                    {
+                        Role = "assistant",
+                        Content = $"Error: {result?.Error ?? "Unknown error occurred"}",
+                        Timestamp = DateTime.UtcNow
+                    });
+                }
+            }
+            else
+            {
+                // Handle HTTP error
+                messages.Remove(thinkingMessage);
+                messages.Add(new ChatMessage
+                {
+                    Role = "assistant",
+                    Content = $"Error: Unable to connect to the server. Status: {response.StatusCode}",
+                    Timestamp = DateTime.UtcNow
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exception
+            messages.Remove(thinkingMessage);
+            messages.Add(new ChatMessage
+            {
+                Role = "assistant",
+                Content = $"Error: {ex.Message}",
+                Timestamp = DateTime.UtcNow
+            });
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(100); // Small delay to ensure DOM is updated
+        // Scroll will be handled by CSS
+    }
+}
