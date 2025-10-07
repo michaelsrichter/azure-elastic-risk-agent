@@ -1,13 +1,15 @@
 # Azure Deployment Guide
 
-This document provides instructions for deploying the ElasticOn.RiskAgent.Demo.Functions to Azure using Azure Developer CLI (azd).
+This document provides instructions for deploying the ElasticOn Risk Agent Demo solution to Azure using Azure Developer CLI (azd). The solution includes Azure Functions (backend API), Microsoft Teams bot, and Blazor WebAssembly app.
 
 ## Prerequisites
 
 1. **Azure Developer CLI (azd)**: Install from https://aka.ms/azd-install
 2. **Azure CLI**: Install from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
-3. **.NET 8 SDK**: Required for building the Functions project
+3. **.NET 9 SDK**: Required for building all projects
 4. **Azure Subscription**: With appropriate permissions to create resources
+5. **Elasticsearch Cluster**: For document indexing and search
+6. **Azure AI Foundry Project**: For agent and AI services (optional, for chat functionality)
 
 ## Getting Started
 
@@ -65,7 +67,7 @@ The deployment creates the following Azure resources:
 - **Managed Identity** (secure resource access)
 
 > **Note:** Azure Key Vault is not currently used due to Flex Consumption plan limitations.  
-> Secrets are stored directly in Function App settings. See [docs/TODO_KEYVAULT_INTEGRATION.md](docs/TODO_KEYVAULT_INTEGRATION.md) for future plans.
+> Secrets are stored directly in Function App settings.
 
 ## Configuration
 
@@ -291,10 +293,22 @@ If you encounter 401 errors on internal calls, run:
 ⚠️ **Secrets Storage**: Secrets are currently stored directly in Function App settings (not Key Vault) due to Flex Consumption plan limitations. This means:
 - Secrets are visible to users with Function App access in Azure Portal
 - No automatic secret rotation
-- See [docs/TODO_KEYVAULT_INTEGRATION.md](docs/TODO_KEYVAULT_INTEGRATION.md) for future Key Vault integration plans
+- Key Vault integration will be added when Flex Consumption plan supports it
 
 ## Additional Resources
 
-- **Logging Guide**: Application Insights queries and log levels configured
-- **TODO: Key Vault**: [docs/TODO_KEYVAULT_INTEGRATION.md](docs/TODO_KEYVAULT_INTEGRATION.md) - Future integration plan
-- **Deployment Summary**: [docs/KEYVAULT_REMOVAL_SUMMARY.md](docs/KEYVAULT_REMOVAL_SUMMARY.md) - Recent changes
+### Documentation
+- [README.md](README.md) - Complete solution overview
+- [docs/README.md](docs/README.md) - Documentation index
+- [docs/ChatFunction-README.md](docs/ChatFunction-README.md) - Chat function documentation
+- [docs/ProcessPdfFunction-IndexDocument-README.md](docs/ProcessPdfFunction-IndexDocument-README.md) - PDF processing documentation
+- [docs/IndexDocumentFunction-README.md](docs/IndexDocumentFunction-README.md) - Document indexing documentation
+
+### Configuration Documentation
+- [docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md](docs/Functions-ELASTICSEARCH_CONFIG_EXAMPLES.md) - Elasticsearch configuration examples
+- [docs/CUSTOM_ELASTICSEARCH_INDEX.md](docs/CUSTOM_ELASTICSEARCH_INDEX.md) - Custom Elasticsearch index setup
+- [docs/ContentSafety.md](docs/ContentSafety.md) - Content Safety implementation
+
+### Component Documentation
+- [docs/M365-IMPLEMENTATION_SUMMARY.md](docs/M365-IMPLEMENTATION_SUMMARY.md) - Microsoft Teams bot
+- [docs/Web-README.md](docs/Web-README.md) - Blazor WebAssembly app
