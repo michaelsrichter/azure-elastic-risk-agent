@@ -114,15 +114,15 @@ public class ChatFunction
                         var securityAlertMessage = "⚠️ Your message has been flagged by our content safety system. Please rephrase your question.";
                         
                         // Convert markdown to HTML
-                        var pipeline = new MarkdownPipelineBuilder()
+                        var userPromptPipeline = new MarkdownPipelineBuilder()
                             .UseAdvancedExtensions()
                             .Build();
-                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, pipeline);
+                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, userPromptPipeline);
                         
-                        var response = req.CreateResponse(HttpStatusCode.OK);
-                        response.Headers.Add("Content-Type", "application/json");
+                        var userPromptResponse = req.CreateResponse(HttpStatusCode.OK);
+                        userPromptResponse.Headers.Add("Content-Type", "application/json");
                         
-                        var responseData = new SendMessageResponse
+                        var userPromptResponseData = new SendMessageResponse
                         {
                             Success = true,
                             Message = securityAlertMessage,
@@ -130,9 +130,9 @@ public class ChatFunction
                             ThreadId = request.ThreadId // Use request ThreadId since we haven't created one yet
                         };
                         
-                        var json = JsonSerializer.Serialize(responseData, GetJsonOptions());
-                        await response.WriteStringAsync(json, cancellationToken);
-                        return response;
+                        var userPromptJson = JsonSerializer.Serialize(userPromptResponseData, GetJsonOptions());
+                        await userPromptResponse.WriteStringAsync(userPromptJson, cancellationToken);
+                        return userPromptResponse;
                     }
                     
                     _logger.LogWarning("Jailbreak detected but continuing in Audit mode");
@@ -352,15 +352,15 @@ public class ChatFunction
                         var securityAlertMessage = $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\nOffending text:\n\"{toolOutputDetectionResult.OffendingText}\"";
                         
                         // Convert markdown to HTML
-                        var pipeline = new MarkdownPipelineBuilder()
+                        var toolOutputPipeline = new MarkdownPipelineBuilder()
                             .UseAdvancedExtensions()
                             .Build();
-                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, pipeline);
+                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, toolOutputPipeline);
                         
-                        var response = req.CreateResponse(HttpStatusCode.OK);
-                        response.Headers.Add("Content-Type", "application/json");
+                        var toolOutputResponse = req.CreateResponse(HttpStatusCode.OK);
+                        toolOutputResponse.Headers.Add("Content-Type", "application/json");
                         
-                        var responseData = new SendMessageResponse
+                        var toolOutputResponseData = new SendMessageResponse
                         {
                             Success = true,
                             Message = securityAlertMessage,
@@ -368,9 +368,9 @@ public class ChatFunction
                             ThreadId = threadId
                         };
                         
-                        var json = JsonSerializer.Serialize(responseData, GetJsonOptions());
-                        await response.WriteStringAsync(json, cancellationToken);
-                        return response;
+                        var toolOutputJson = JsonSerializer.Serialize(toolOutputResponseData, GetJsonOptions());
+                        await toolOutputResponse.WriteStringAsync(toolOutputJson, cancellationToken);
+                        return toolOutputResponse;
                     }
                     // Audit mode: Continue processing but will note the detection in the response
                 }
@@ -437,15 +437,15 @@ public class ChatFunction
             // Convert markdown to HTML using Markdig with advanced extensions
             // UseAdvancedExtensions includes: AutoLinks, Tables, TaskLists, Emphasis extras,
             // Lists, Footnotes, Citations, Math, GridTables, Abbreviations, and more
-            var pipeline = new MarkdownPipelineBuilder()
+            var responsePipeline = new MarkdownPipelineBuilder()
                 .UseAdvancedExtensions()
                 .Build();
-            var messageHtml = Markdown.ToHtml(finalResponse, pipeline);
+            var messageHtml = Markdown.ToHtml(finalResponse, responsePipeline);
 
-            var response = req.CreateResponse(HttpStatusCode.OK);
-            response.Headers.Add("Content-Type", "application/json");
+            var finalHttpResponse = req.CreateResponse(HttpStatusCode.OK);
+            finalHttpResponse.Headers.Add("Content-Type", "application/json");
             
-            var responseData = new SendMessageResponse
+            var finalResponseData = new SendMessageResponse
             {
                 Success = true,
                 Message = finalResponse,
@@ -453,10 +453,10 @@ public class ChatFunction
                 ThreadId = threadId
             };
             
-            var json = JsonSerializer.Serialize(responseData, GetJsonOptions());
-            await response.WriteStringAsync(json, cancellationToken);
+            var finalJson = JsonSerializer.Serialize(finalResponseData, GetJsonOptions());
+            await finalHttpResponse.WriteStringAsync(finalJson, cancellationToken);
 
-            return response;
+            return finalHttpResponse;
 
             #endregion
         }
