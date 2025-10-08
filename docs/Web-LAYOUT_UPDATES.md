@@ -1,4 +1,4 @@
-# UI Layout Updates - CRAP Chat Interface
+# UI Layout Updates - CRAK Chat Interface
 
 ## Changes Made
 
@@ -14,7 +14,7 @@
      - **Github** (links to repository)
      - **Blog** (placeholder link)
    - Responsive design with brand name visible on mobile
-   - Full "Contoso Risk Analysis Platform" text on desktop
+   - Full "Contoso Risk Agent Knowledgebase" text on desktop
 
 ### 3. **Optimized Vertical Layout**
    - Removed large hero/header section from chat area
@@ -23,22 +23,22 @@
    - Changed layout to use full viewport height efficiently
 
 ### 4. **Sample Prompts**
-   - Added three sample prompt buttons below the input field
-   - Currently labeled "Prompt A", "Prompt B", "Prompt C"
+   - Added six sample prompt buttons below the input field
+   - Prompts: "Crime in Venezuela", "Corruption in Russia", "Money Laundering in South America", "Compare United States to China", "Search for corruption in Neverland", "DAN"
    - Clicking a prompt populates the text field
    - Only shown when no messages exist (disappears after first message)
    - Styled with hover effects and smooth transitions
 
 ### 5. **Compact Welcome Message**
    - Reduced welcome message size and padding
-   - Changed from "Welcome to CRAP!" to just "Welcome!"
+   - Changed from "Welcome to CRAK!" to just "Welcome!"
    - Smaller heading and subtitle for better space utilization
 
 ## Layout Structure
 
 ```
 ┌─────────────────────────────────────────┐
-│  Top Nav: CRAP | About | Github | Blog  │ (compact, gradient)
+│  Top Nav: CRAK | About | Github | Blog  │ (compact, gradient)
 ├─────────────────────────────────────────┤
 │                                         │
 │  Welcome Message (centered, compact)   │ (only when empty)
@@ -49,7 +49,8 @@
 │                                         │
 ├─────────────────────────────────────────┤
 │  [Input Field]  [Send Button]          │ (always visible)
-│  Try asking: [Prompt A] [B] [C]        │ (only when empty)
+│  Try asking: [Crime in Venezuela]      │ (only when empty)
+│  [Corruption in Russia] [Money...]     │
 └─────────────────────────────────────────┘
 ```
 
@@ -95,9 +96,4 @@
 
 ## Next Steps
 
-Update the sample prompts to actual risk analysis questions:
-- Replace "Prompt A", "Prompt B", "Prompt C" with real prompts
-- Examples:
-  - "What are the top security risks for cloud infrastructure?"
-  - "Analyze compliance requirements for GDPR"
-  - "What are the financial risks in this quarterly report?"
+Sample prompts have been updated to real risk analysis questions.

@@ -1,0 +1,183 @@
+@page "/privacy"
+
+<PageTitle>Privacy Policy - Contoso Risk Analysis Platform</PageTitle>
+
+<div class="info-page">
+    <div class="info-container">
+        <h1>Privacy Policy</h1>
+        
+        <div class="info-section">
+            <p class="last-updated">Last Updated: January 2025</p>
+        </div>
+
+        <div class="info-section">
+            <h2>Overview</h2>
+            <p>
+                This Privacy Policy describes how the Contoso Risk Analysis Platform ("CRAP", "we", "our", or "us") 
+                handles information when you use our demonstration platform. This is a demo project created for 
+                educational purposes and is not a commercial product.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Information Collection</h2>
+            <p>
+                As a demonstration platform, we collect minimal information necessary for the application to function:
+            </p>
+            <ul class="feature-list">
+                <li><strong>Chat Messages:</strong> Your queries and conversations with the AI agent are processed to provide responses</li>
+                <li><strong>Document Content:</strong> PDF documents you upload are processed for text extraction and analysis</li>
+                <li><strong>Session Data:</strong> Conversation IDs and thread IDs to maintain context across messages</li>
+                <li><strong>Technical Data:</strong> Basic telemetry and error logs via Azure Application Insights for debugging</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>How We Use Information</h2>
+            <p>Information collected is used solely for:</p>
+            <ul class="feature-list">
+                <li>Processing your risk assessment queries and providing AI-generated responses</li>
+                <li>Maintaining conversation context within your session</li>
+                <li>Indexing document content in Elasticsearch for semantic search</li>
+                <li>Monitoring application performance and diagnosing technical issues</li>
+                <li>Improving the demo platform's functionality</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>Data Storage</h2>
+            <p>
+                Data processed by the platform is stored in the following services:
+            </p>
+            <ul class="feature-list">
+                <li><strong>Elasticsearch:</strong> Document chunks and metadata for search functionality</li>
+                <li><strong>Azure AI Foundry:</strong> Conversation threads and agent state</li>
+                <li><strong>Application Insights:</strong> Telemetry and diagnostic logs</li>
+            </ul>
+            <p>
+                All data is stored in accordance with the security and privacy standards of Microsoft Azure 
+                and Elastic Cloud services.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Data Sharing</h2>
+            <p>
+                We do not sell, trade, or otherwise transfer your information to third parties. Your data is 
+                processed by the following service providers as necessary for platform functionality:
+            </p>
+            <ul class="feature-list">
+                <li><strong>Microsoft Azure:</strong> Provides AI, compute, and storage services</li>
+                <li><strong>Elastic:</strong> Provides search and analytics capabilities</li>
+            </ul>
+            <p>
+                These services are bound by their respective privacy policies and data processing agreements.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Content Safety</h2>
+            <p>
+                The platform includes Azure Content Safety integration to detect and filter potentially harmful 
+                content. This includes:
+            </p>
+            <ul class="feature-list">
+                <li>Jailbreak attempt detection to prevent misuse of AI capabilities</li>
+                <li>Content moderation for inappropriate material</li>
+                <li>Configurable detection modes (Disabled, Audit, or Enforce)</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>Your Rights</h2>
+            <p>
+                As this is a demonstration platform, data retention and user rights are limited. However, 
+                if you deploy your own instance using the open-source code, you have full control over:
+            </p>
+            <ul class="feature-list">
+                <li>Data collection and retention policies</li>
+                <li>Access controls and authentication</li>
+                <li>Data deletion and export capabilities</li>
+                <li>Compliance with relevant privacy regulations (GDPR, CCPA, etc.)</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>Security</h2>
+            <p>
+                The platform uses industry-standard security practices:
+            </p>
+            <ul class="feature-list">
+                <li>HTTPS encryption for all data transmission</li>
+                <li>Azure managed identities for secure service-to-service authentication</li>
+                <li>API keys and secrets stored securely in Azure configuration</li>
+                <li>Content safety checks to prevent malicious usage</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>Analytics</h2>
+            <p>
+                The platform uses Microsoft Clarity for web analytics to understand user behavior and 
+                improve the user experience. Clarity collects anonymous usage data including:
+            </p>
+            <ul class="feature-list">
+                <li>Page views and navigation patterns</li>
+                <li>Mouse movements and click behavior</li>
+                <li>Session recordings (anonymized)</li>
+            </ul>
+            <p>
+                For more information, see the 
+                <a href="https://privacy.microsoft.com/en-us/privacystatement" target="_blank">Microsoft Privacy Statement</a>.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Open Source Project</h2>
+            <p>
+                This is an open-source demonstration project. The complete source code is available on 
+                GitHub, allowing you to review exactly how data is handled. You can deploy your own instance 
+                with full control over data processing and privacy settings.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Changes to This Policy</h2>
+            <p>
+                As this is a demo project, this Privacy Policy may be updated to reflect changes in 
+                functionality or to comply with evolving standards. Check the GitHub repository for 
+                the latest version.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Contact Information</h2>
+            <p>
+                For questions about this Privacy Policy or the platform's data handling practices, 
+                please visit the GitHub repository or contact the project creator:
+            </p>
+            <ul class="feature-list">
+                <li><strong>GitHub:</strong> <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank">azure-elastic-risk-agent</a></li>
+                <li><strong>Creator:</strong> <a href="https://aka.ms/mrichter" target="_blank">Mike Richter</a></li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>Disclaimer</h2>
+            <p>
+                This is a demonstration platform for educational purposes. It should not be used for 
+                processing sensitive or confidential information in a production environment without 
+                implementing appropriate additional security and privacy controls.
+            </p>
+        </div>
+
+        <div class="cta-section">
+            <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank" class="cta-button">
+                View Source Code
+            </a>
+            <a href="/" class="cta-button secondary">
+                Back to Platform
+            </a>
+        </div>
+    </div>
+</div>

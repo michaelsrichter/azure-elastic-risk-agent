@@ -708,3 +708,391 @@ code {
         transform: none;
     }
 }
+
+/* ===== Info Pages Styling ===== */
+.info-page {
+    background: #f5f7fa;
+    min-height: calc(100vh - 80px);
+    padding: 3rem 1.5rem;
+}
+
+.info-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 3rem;
+    border-radius: 1rem;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+}
+
+.info-container h1 {
+    color: #667eea;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.info-container h2 {
+    color: #333;
+    margin-top: 2.5rem;
+    margin-bottom: 1.25rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+.info-container h3 {
+    color: #555;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.lead {
+    font-size: 1.25rem;
+    color: #555;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+}
+
+.info-section {
+    margin-bottom: 2.5rem;
+}
+
+.info-section p {
+    color: #555;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.info-section a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.info-section a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.feature-list li {
+    padding: 0.75rem 0 0.75rem 2rem;
+    position: relative;
+    color: #555;
+    line-height: 1.7;
+}
+
+.feature-list li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.feature-card {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.feature-card h2,
+.feature-card h3 {
+    color: #667eea;
+    margin-top: 0;
+    font-size: 1.5rem;
+}
+
+.feature-card p {
+    margin-bottom: 0.5rem;
+}
+
+.feature-card ul {
+    margin-top: 1rem;
+}
+
+.cta-section {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+}
+
+.cta-button {
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 2rem;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-block;
+    text-align: center;
+}
+
+.cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.cta-button.secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.cta-button.secondary:hover {
+    background: #f8f9fa;
+    color: #764ba2;
+    border-color: #764ba2;
+}
+
+/* Pricing Page Specific */
+.pricing-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem;
+    border-radius: 1rem;
+    margin: 2rem 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.pricing-card.featured {
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+}
+
+.pricing-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.pricing-card h2 {
+    color: white;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.price {
+    font-size: 4rem;
+    font-weight: 700;
+    margin: 1.5rem 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.price .currency {
+    font-size: 2rem;
+}
+
+.price .period {
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.pricing-description {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.1rem;
+    margin: 1.5rem 0;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.pricing-features li {
+    padding: 0.75rem 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1rem;
+}
+
+/* Documentation Page Specific */
+.doc-link {
+    display: inline-block;
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.doc-link:hover {
+    color: #764ba2;
+    transform: translateX(4px);
+}
+
+.doc-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.doc-list li {
+    padding: 0.5rem 0;
+}
+
+.doc-list a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.doc-list a:hover {
+    color: #764ba2;
+}
+
+/* Partners Page Specific */
+.partner-card {
+    background: #f8f9fa;
+    padding: 2.5rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+    border-top: 4px solid #667eea;
+}
+
+.partner-card h2 {
+    color: #667eea;
+    margin-top: 0;
+    font-size: 2rem;
+}
+
+.partner-content {
+    margin: 1.5rem 0;
+}
+
+.partner-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+.partner-link {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    color: #667eea;
+    text-decoration: none;
+    border-radius: 2rem;
+    font-weight: 600;
+    border: 2px solid #667eea;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.partner-link:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Privacy Policy Specific */
+.last-updated {
+    color: #999;
+    font-style: italic;
+    margin-bottom: 2rem;
+}
+
+/* FAQ Page Specific */
+.faq-item {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.faq-item:last-of-type {
+    border-bottom: none;
+}
+
+.faq-item h2 {
+    color: #667eea;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.faq-item p {
+    margin-bottom: 0.5rem;
+}
+
+.faq-item code {
+    background: #f5f5f5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    color: #667eea;
+    font-size: 0.9em;
+}
+
+/* Responsive adjustments for info pages */
+@media (max-width: 768px) {
+    .info-page {
+        padding: 2rem 1rem;
+    }
+    
+    .info-container {
+        padding: 2rem 1.5rem;
+    }
+    
+    .info-container h1 {
+        font-size: 2rem;
+    }
+    
+    .info-container h2 {
+        font-size: 1.5rem;
+    }
+    
+    .lead {
+        font-size: 1.1rem;
+    }
+    
+    .cta-section {
+        flex-direction: column;
+    }
+    
+    .cta-button {
+        width: 100%;
+    }
+    
+    .price {
+        font-size: 3rem;
+    }
+}

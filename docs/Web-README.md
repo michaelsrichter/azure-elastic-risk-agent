@@ -1,4 +1,4 @@
-# Contoso Risk Analysis Platform (CRAP) - Blazor WebAssembly Chat
+# Contoso Risk Agent Knowledgebase (CRAK) - Blazor WebAssembly Chat
 
 This Blazor WebAssembly application provides a sleek chat interface for risk analysis powered by Azure Functions and Microsoft Agent Framework.
 
@@ -29,7 +29,7 @@ This Blazor WebAssembly application provides a sleek chat interface for risk ana
 - Modern gradient design with purple theme
 - Smooth animations and transitions
 - Responsive message bubbles
-- Professional branding as "CRAP"
+- Professional branding as "CRAK"
 
 ### 5. **Configuration**
 - HttpClient configured to call Azure Function API
