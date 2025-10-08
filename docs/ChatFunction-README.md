@@ -219,6 +219,7 @@ The Blazor WebAssembly app (ChatComponent.razor) is designed to call this endpoi
 
 ## Related Documentation
 
-- [M365 RiskAgentBot](../../ElasticOn.RiskAgent.Demo.M365/Bot/RiskAgentBot.cs)
-- [Content Safety Implementation](../../../docs/ContentSafety.md)
-- [Elastic MCP Integration](../../../docs/CUSTOM_ELASTICSEARCH_INDEX.md)
+- [M365 RiskAgentBot](../src/ElasticOn.RiskAgent.Demo.M365/Bot/RiskAgentBot.cs) - Source code
+- [M365 Implementation Summary](./M365-IMPLEMENTATION_SUMMARY.md) - Teams bot overview
+- [Content Safety Implementation](./ContentSafety.md) - Content Safety details
+- [Elastic MCP Integration](./CUSTOM_ELASTICSEARCH_INDEX.md) - Elasticsearch MCP setup
