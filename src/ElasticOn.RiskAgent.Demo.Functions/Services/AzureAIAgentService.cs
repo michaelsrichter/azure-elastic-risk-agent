@@ -73,8 +73,9 @@ public class AzureAIAgentService : IAzureAIAgentService
 
         _logger.LogInformation("Initializing Azure AI Agent Service with endpoint: {Endpoint}", _endpoint);
         
-        // Create the PersistentAgentsClient using AzureCliCredential
-        _client = new PersistentAgentsClient(_endpoint, new AzureCliCredential());
+        // Create the PersistentAgentsClient using DefaultAzureCredential
+        // This will try multiple authentication methods including managed identity for Azure deployment
+        _client = new PersistentAgentsClient(_endpoint, new DefaultAzureCredential());
     }
 
     /// <summary>
