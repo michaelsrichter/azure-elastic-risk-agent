@@ -5,6 +5,15 @@
 @inject ChatStateService ChatState
 
 <div class="chat-container">
+    @if (messages.Count > 0)
+    {
+        <div class="chat-header">
+            <button class="new-chat-button" @onclick="ResetChat" title="Start New Conversation">
+                <span class="new-chat-icon">✏️</span>
+                <span class="new-chat-text">New Chat</span>
+            </button>
+        </div>
+    }
     <div class="chat-messages" @ref="messagesContainer">
         @if (messages.Count == 0)
         {
@@ -110,6 +119,19 @@
     {
         // Initialize conversation state on page load
         var conversationId = ChatState.ConversationId;
+    }
+
+    private void ResetChat()
+    {
+        // Clear messages
+        messages.Clear();
+        currentMessage = string.Empty;
+        
+        // Reset conversation state
+        ChatState.ConversationId = Guid.NewGuid().ToString();
+        ChatState.ThreadId = null;
+        
+        StateHasChanged();
     }
 
     private void SelectPrompt(string prompt)

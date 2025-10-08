@@ -44,6 +44,48 @@ a, .btn-link {
     background: #ffffff;
 }
 
+/* Chat Header with New Chat Button */
+.chat-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    background: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.new-chat-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.new-chat-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.new-chat-button:active {
+    transform: translateY(0);
+}
+
+.new-chat-icon {
+    font-size: 1.1rem;
+}
+
+.new-chat-text {
+    font-size: 0.9rem;
+}
+
 /* Messages Area */
 .chat-messages {
     flex: 1;
