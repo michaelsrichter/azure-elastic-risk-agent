@@ -14,6 +14,9 @@
     "agentId": {
       "value": "${AI_AGENT_ID=}"
     },
+    "aiFoundryProjectName": {
+      "value": "${AI_FOUNDRY_PROJECT_NAME=}"
+    },
     "agentName": {
       "value": "${AI_AGENT_NAME=RiskAgent-Demo}"
     },

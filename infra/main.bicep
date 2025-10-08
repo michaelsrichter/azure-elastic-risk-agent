@@ -12,6 +12,9 @@ param location string
 @description('Optional: Pre-configured Agent ID')
 param agentId string = ''
 
+@description('AI Foundry Project Name (if manually created)')
+param aiFoundryProjectName string = ''
+
 @description('Agent Name')
 param agentName string = 'RiskAgent-Demo'
 
@@ -400,7 +403,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AZURE_FOUNDRY_PROJECT_ENDPOINT'
-          value: '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
+          value: 'https://${aiFoundryService.name}.services.ai.azure.com/api/projects/${!empty(aiFoundryProjectName) ? aiFoundryProjectName : '${aiFoundryService.name}-project'}'
         }
         {
           name: 'AIServicesAgentID'
@@ -408,7 +411,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AIServicesProjectEndpoint'
-          value: '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
+          value: 'https://${aiFoundryService.name}.services.ai.azure.com/api/projects/${!empty(aiFoundryProjectName) ? aiFoundryProjectName : '${aiFoundryService.name}-project'}'
         }
         {
           name: 'AIServicesModelId'
@@ -682,7 +685,7 @@ output AZURE_AI_HUB_NAME string = aiHub.name
 output AZURE_AI_HUB_ID string = aiHub.id
 output AZURE_AI_PROJECT_NAME string = aiProject.name
 output AZURE_AI_PROJECT_ID string = aiProject.id
-output AZURE_AI_PROJECT_ENDPOINT string = '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
+output AZURE_AI_PROJECT_ENDPOINT string = 'https://${aiFoundryService.name}.services.ai.azure.com/api/projects/${!empty(aiFoundryProjectName) ? aiFoundryProjectName : '${aiFoundryService.name}-project'}'
 output AZURE_KEY_VAULT_NAME string = keyVault.name
 output AZURE_STATIC_WEB_APP_NAME string = staticWebApp.name
 output AZURE_STATIC_WEB_APP_URL string = 'https://${staticWebApp.properties.defaultHostname}'
