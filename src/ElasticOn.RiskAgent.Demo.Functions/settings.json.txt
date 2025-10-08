@@ -7,10 +7,20 @@
     "APPLICATIONINSIGHTS_CONNECTION_STRING": "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://localhost/",
     "ApplicationInsightsAgent_EXTENSION_VERSION": "~3",
     "XDT_MicrosoftApplicationInsights_Mode": "Recommended",
-    "AZURE_OPENAI_ENDPOINT": "https://your-openai-service.openai.azure.com/",
-    "AZURE_OPENAI_API_KEY": "your-azure-openai-api-key-here",
-    "AzureOpenAiInferenceId": "azureopenai-text-embedding-local",
-    "ElasticsearchUri": "https://your-elasticsearch-cluster.com:9200",
+    "AzureOpenAiInferenceId": "azureopenai-text-embedding-local", // GET THIS VALUE FROM ELASTICSEARCH
+    "ElasticsearchUri": "https://your-elasticsearch-cluster.com:9200",{{
+  "name": "Attach to .NET Functions",
+  "type": "coreclr",
+  "request": "attach",
+  "processId": "${command:azureFunctions.pickProcess}"
+}
+
+  "name": "Attach to .NET Functions",
+  "type": "coreclr",
+  "request": "attach",
+  "processId": "${command:azureFunctions.pickProcess}"
+}
+
     "ElasticsearchApiKey": "your-elasticsearch-api-key-here",
     "ElasticsearchIndexName": "risk-agent-documents-v2",
     "ElasticsearchMaxChunkSize": "1000",

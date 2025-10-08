@@ -438,7 +438,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AIServicesContentSafetyEndpoint'
-          value: aiFoundryService.properties.endpoints.contentSafety
+          value: aiFoundryService.properties.endpoints['Content Safety']
         }
         {
           name: 'AIServicesContentSafetySubscriptionKey'
