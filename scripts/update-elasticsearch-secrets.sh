@@ -112,11 +112,16 @@ fi
 echo ""
 echo "🔧 Updating Function App settings..."
 
+# Build the MCP Server URL from Elasticsearch URI (remove port and add MCP path)
+MCP_SERVER_URL=$(echo "$ELASTICSEARCH_URI" | sed 's/:[0-9]*$//' | sed 's|$|/api/agent_builder/mcp|')
+
 # Build the settings array
 SETTINGS=(
     "ElasticsearchUri=$ELASTICSEARCH_URI"
     "ElasticsearchApiKey=$ELASTICSEARCH_API_KEY"
     "ElasticsearchIndexName=$ELASTICSEARCH_INDEX_NAME"
+    "AIServicesElasticApiKey=$ELASTICSEARCH_API_KEY"
+    "AIServicesMCPToolServerUrl=$MCP_SERVER_URL"
 )
 
 # Add AzureOpenAiInferenceId if it was found in local.settings.json
@@ -142,6 +147,8 @@ echo "📝 Your Function App is now configured with:"
 echo "   • Elasticsearch URI: $ELASTICSEARCH_URI"
 echo "   • Elasticsearch API Key: [HIDDEN]"
 echo "   • Elasticsearch Index Name: $ELASTICSEARCH_INDEX_NAME"
+echo "   • AI Services Elastic API Key: [HIDDEN]"
+echo "   • AI Services MCP Tool Server URL: $MCP_SERVER_URL"
 if [ -n "$AZURE_OPENAI_INFERENCE_ID" ]; then
     echo "   • Azure OpenAI Inference ID: $AZURE_OPENAI_INFERENCE_ID"
 fi
