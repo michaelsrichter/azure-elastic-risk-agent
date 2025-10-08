@@ -128,8 +128,7 @@
         currentMessage = string.Empty;
         
         // Reset conversation state
-        ChatState.ConversationId = Guid.NewGuid().ToString();
-        ChatState.ThreadId = null;
+        ChatState.ResetConversation();
         
         StateHasChanged();
     }

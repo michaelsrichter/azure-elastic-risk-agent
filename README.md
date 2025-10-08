@@ -11,6 +11,165 @@ This solution consists of three main applications and comprehensive testing infr
 3. **Blazor WebAssembly App** - Modern web interface for risk analysis chat
 4. **Comprehensive Testing** - Unit tests ensuring reliability and correctness
 
+## High-Level Architecture
+
+The following diagram illustrates the end-to-end architecture and data flow of the Risk Agent solution:
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize':'18px'}}}%%
+flowchart TB
+    subgraph DataSources["📁 DATA SOURCES"]
+        direction TB
+        SP["<b>SharePoint Online</b><br/><br/>━━━━━━━━━━━━━━━<br/>Document Libraries<br/>Risk Reports<br/>Compliance Documents<br/>Financial Records"]
+    end
+    
+    subgraph Orchestration["⚡ ORCHESTRATION & AUTOMATION"]
+        direction TB
+        PA["<b>Microsoft Power Automate</b><br/><br/>━━━━━━━━━━━━━━━<br/>• Document Change Detection<br/>• File Properties Extraction<br/>• Content Retrieval<br/>• HTTP POST to Functions"]
+    end
+    
+    subgraph Processing["🔧 PROCESSING LAYER"]
+        direction TB
+        AF["<b>Azure Functions</b><br/>(.NET 9 Isolated Worker)"]
+        PDF["<b>Process PDF Function</b><br/><br/>• Text Extraction<br/>• Content Chunking<br/>• Metadata Enrichment"]
+        IDX["<b>Index Document Function</b><br/><br/>• Document Storage<br/>• Metadata Indexing<br/>• Vector Embeddings"]
+        CHAT["<b>Chat Function</b><br/><br/>• Query Processing<br/>• Conversation Management<br/>• Response Streaming"]
+    end
+    
+    subgraph DataStore["🔍 SEARCH & VECTOR STORE"]
+        direction TB
+        ES["<b>Elasticsearch</b><br/>(Azure Native Integration)<br/><br/>━━━━━━━━━━━━━━━<br/>• Hybrid Search<br/>• Vector Similarity<br/>• Keyword Matching<br/>• MCP Server Enabled"]
+    end
+    
+    subgraph AI["🤖 ARTIFICIAL INTELLIGENCE LAYER"]
+        direction TB
+        AIF["<b>Azure AI Foundry</b><br/><br/>Agent Framework<br/>Orchestration Engine"]
+        GPT["<b>OpenAI Models</b><br/><br/>GPT-4o / GPT-4o-mini<br/>Natural Language Processing"]
+        CS["<b>Azure Content Safety</b><br/><br/>Jailbreak Detection<br/>Content Moderation<br/>Harm Prevention"]
+        MCP["<b>Elasticsearch MCP</b><br/><br/>Document Search Tools<br/>Retrieval Augmentation"]
+    end
+    
+    subgraph Clients["👥 USER EXPERIENCE LAYER"]
+        direction TB
+        TEAMS["<b>Microsoft Teams</b><br/><br/>Declarative Agent<br/>In-Context Collaboration"]
+        WEB["<b>Blazor WebAssembly</b><br/><br/>Standalone Web App<br/>Rich UI Experience"]
+        M365["<b>M365 Copilot</b><br/><br/>Enterprise Integration<br/>Unified AI Assistant"]
+    end
+    
+    subgraph Security["🔒 SECURITY & COMPLIANCE"]
+        direction TB
+        PL["<b>Azure Private Link</b><br/><br/>Private Connectivity<br/>No Public Exposure"]
+        APIM["<b>API Management</b><br/><br/>Gateway & Routing<br/>Authentication & Authorization"]
+        ENTRA["<b>Microsoft Entra ID</b><br/><br/>Identity Provider<br/>SSO & MFA"]
+    end
+    
+    %% Data Flow - Document Ingestion
+    SP ==>|"📄 File Trigger Event"| PA
+    PA ==>|"① Get Properties"| AF
+    PA ==>|"② Get Content"| AF
+    AF ==> PDF
+    PDF ==>|"Extracted Text<br/>+ Metadata"| IDX
+    IDX ==>|"Index Request"| ES
+    
+    %% Data Flow - User Queries
+    TEAMS ==>|"💬 User Query"| CHAT
+    WEB ==>|"💬 User Query"| CHAT
+    M365 ==>|"💬 User Query"| CHAT
+    
+    %% AI Processing Flow
+    CHAT ==>|"Message + Context"| AIF
+    AIF <==>|"Tool Call:<br/>Search Documents"| MCP
+    MCP <==>|"Query"| ES
+    AIF <==>|"Generate<br/>Response"| GPT
+    AIF <==>|"Safety<br/>Check"| CS
+    AIF ==>|"AI Response"| CHAT
+    CHAT ==>|"📨 Response"| TEAMS
+    CHAT ==>|"📨 Response"| WEB
+    CHAT ==>|"📨 Response"| M365
+    
+    %% Security Layer
+    PL -.->|"🔐 Secure Connection"| ES
+    APIM -.->|"🛡️ Protected API"| AF
+    ENTRA -.->|"🔑 Auth Token"| TEAMS
+    ENTRA -.->|"🔑 Auth Token"| WEB
+    
+    %% Styling
+    classDef dataSource fill:#0078D4,stroke:#004578,stroke-width:3px,color:#fff,font-size:16px
+    classDef orchestration fill:#50E6FF,stroke:#0078D4,stroke-width:3px,color:#000,font-size:16px
+    classDef processing fill:#00BCF2,stroke:#0078D4,stroke-width:3px,color:#000,font-size:16px
+    classDef storage fill:#00B294,stroke:#00786B,stroke-width:3px,color:#fff,font-size:16px
+    classDef ai fill:#8B5CF6,stroke:#6B21A8,stroke-width:3px,color:#fff,font-size:16px
+    classDef client fill:#FFB900,stroke:#A77800,stroke-width:3px,color:#000,font-size:16px
+    classDef security fill:#E81123,stroke:#A4262C,stroke-width:3px,color:#fff,font-size:16px
+    
+    class SP dataSource
+    class PA orchestration
+    class AF,PDF,IDX,CHAT processing
+    class ES storage
+    class AIF,GPT,CS,MCP ai
+    class TEAMS,WEB,M365 client
+    class PL,APIM,ENTRA security
+```
+
+### Architecture Components
+
+#### 1. Data Sources Layer
+- **SharePoint**: Document libraries containing risk assessment documents, compliance reports, and financial documents
+- **Triggers**: Power Automate monitors for new or updated files
+
+#### 2. Orchestration Layer
+- **Power Automate**: 
+  - Monitors SharePoint for document changes
+  - Extracts file properties (metadata)
+  - Retrieves file content
+  - Orchestrates calls to Azure Functions for processing
+
+#### 3. Processing Layer (Azure Functions)
+- **Process PDF Function**: Extracts text from PDF documents and chunks content for indexing
+- **Index Document Function**: Stores processed documents in Elasticsearch with metadata
+- **Chat Function**: Handles AI-powered conversational queries with context from Elasticsearch
+
+#### 4. Search & Storage Layer
+- **Elasticsearch (Azure Native)**: 
+  - Hybrid search capabilities (vector + keyword)
+  - Document storage with metadata
+  - MCP server integration for AI agent tools
+  - Secured via Azure Private Link
+
+#### 5. AI Layer
+- **Azure AI Foundry**: Agent orchestration framework
+- **GPT-4o/GPT-4o-mini**: Language models for natural language understanding and generation
+- **Azure Content Safety**: Jailbreak detection and content moderation
+- **Elasticsearch MCP Tools**: Document search and retrieval capabilities for the AI agent
+
+#### 6. User Interface Layer
+- **Microsoft Teams**: Declarative agent for in-Teams risk assessment queries
+- **Blazor WebAssembly**: Standalone web application for risk analysis chat
+- **M365 Copilot**: Integration for enterprise-wide AI assistance
+
+#### 7. Security Layer
+- **Azure Private Link**: Secure connectivity between Azure services and Elasticsearch
+- **API Management**: Centralized API gateway with authentication and rate limiting
+- **Microsoft Entra ID**: Identity and access management for all client applications
+
+### Data Flow
+
+**Document Ingestion Flow:**
+1. User uploads document to SharePoint
+2. Power Automate detects new file and extracts properties
+3. Power Automate sends file content to Process PDF Function
+4. Function extracts text and creates chunks
+5. Index Document Function stores chunks in Elasticsearch
+
+**Query Flow:**
+1. User submits query via Teams, Web, or M365 Copilot
+2. Chat Function receives request and forwards to Azure AI Foundry Agent
+3. Agent analyzes query and uses MCP tools to search Elasticsearch
+4. Elasticsearch returns relevant document chunks
+5. Agent generates contextual response using GPT-4o
+6. Azure Content Safety validates response for safety
+7. Response is returned to user interface
+
 ## Solution Structure
 
 - `ElasticOn.RiskAgent.Demo.sln` – root solution file
