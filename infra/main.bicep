@@ -239,6 +239,9 @@ resource aiProject 'Microsoft.MachineLearningServices/workspaces@2024-04-01-prev
     hubResourceId: aiHub.id
     publicNetworkAccess: 'Enabled'
   }
+  dependsOn: [
+    aiFoundryService
+  ]
 }
 
 // Connection from AI Project to AI Services
@@ -321,7 +324,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
   })
   kind: 'functionapp,linux'
   identity: {
-    type: 'UserAssigned'
+    type: 'SystemAssigned, UserAssigned'
     userAssignedIdentities: {
       '${managedIdentity.id}': {}
     }
@@ -397,7 +400,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AZURE_FOUNDRY_PROJECT_ENDPOINT'
-          value: 'https://${aiFoundryService.properties.endpoint}/api/projects/${aiProject.name}'
+          value: '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
         }
         {
           name: 'AIServicesAgentID'
@@ -405,7 +408,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'AIServicesProjectEndpoint'
-          value: 'https://${aiFoundryService.properties.endpoint}/api/projects/${aiProject.name}'
+          value: '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
         }
         {
           name: 'AIServicesModelId'
@@ -609,14 +612,56 @@ resource aiHubStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@202
   }
 }
 
-// Cognitive Services OpenAI User role for managed identity on AI Services
+// Azure AI Developer role for user-assigned managed identity on AI Services
 resource aiServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
-  name: guid(aiFoundryService.id, managedIdentity.id, '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
+  name: guid(aiFoundryService.id, managedIdentity.id, '64702f94-c441-49e6-a78b-ef80e0188fee')
   scope: aiFoundryService
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
-      '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+      '64702f94-c441-49e6-a78b-ef80e0188fee'
+    )
+    principalId: managedIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Azure AI Developer role for system-assigned managed identity on AI Services
+resource aiServicesSystemRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
+  name: guid(aiFoundryService.id, functionApp.id, '64702f94-c441-49e6-a78b-ef80e0188fee')
+  scope: aiFoundryService
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '64702f94-c441-49e6-a78b-ef80e0188fee'
+    )
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Azure Machine Learning Workspace Connection Secrets Reader role for system-assigned managed identity on AI Project
+resource aiProjectSystemRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
+  name: guid(aiProject.id, functionApp.id, 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5')
+  scope: aiProject
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
+    )
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Azure Machine Learning Workspace Connection Secrets Reader role for user-assigned managed identity on AI Project
+resource aiProjectUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
+  name: guid(aiProject.id, managedIdentity.id, 'ea01e6af-a1c1-4350-9563-ad00f8c72ec5')
+  scope: aiProject
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'ea01e6af-a1c1-4350-9563-ad00f8c72ec5'
     )
     principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
