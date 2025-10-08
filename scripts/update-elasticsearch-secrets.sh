@@ -44,11 +44,13 @@ if [ -f "$LOCAL_SETTINGS_FILE" ]; then
         ELASTICSEARCH_API_KEY=$(jq -r '.Values.ElasticsearchApiKey // empty' "$LOCAL_SETTINGS_FILE")
         ELASTICSEARCH_INDEX_NAME=$(jq -r '.Values.ElasticsearchIndexName // empty' "$LOCAL_SETTINGS_FILE")
         AZURE_OPENAI_INFERENCE_ID=$(jq -r '.Values.AzureOpenAiInferenceId // empty' "$LOCAL_SETTINGS_FILE")
+        MCP_SERVER_URL=$(jq -r '.Values.AIServicesMCPToolServerUrl // empty' "$LOCAL_SETTINGS_FILE")
         
         [ -n "$ELASTICSEARCH_URI" ] && echo "   ✓ Found ElasticsearchUri: $ELASTICSEARCH_URI"
         [ -n "$ELASTICSEARCH_API_KEY" ] && echo "   ✓ Found ElasticsearchApiKey: [HIDDEN]"
         [ -n "$ELASTICSEARCH_INDEX_NAME" ] && echo "   ✓ Found ElasticsearchIndexName: $ELASTICSEARCH_INDEX_NAME"
         [ -n "$AZURE_OPENAI_INFERENCE_ID" ] && echo "   ✓ Found AzureOpenAiInferenceId: $AZURE_OPENAI_INFERENCE_ID"
+        [ -n "$MCP_SERVER_URL" ] && echo "   ✓ Found AIServicesMCPToolServerUrl: $MCP_SERVER_URL"
         echo ""
     else
         echo "📝 Manual configuration mode selected"
@@ -67,6 +69,7 @@ if [ -f "$LOCAL_SETTINGS_FILE" ]; then
     ELASTICSEARCH_API_KEY=$(jq -r '.Values.ElasticsearchApiKey // empty' "$LOCAL_SETTINGS_FILE")
     ELASTICSEARCH_INDEX_NAME=$(jq -r '.Values.ElasticsearchIndexName // empty' "$LOCAL_SETTINGS_FILE")
     AZURE_OPENAI_INFERENCE_ID=$(jq -r '.Values.AzureOpenAiInferenceId // empty' "$LOCAL_SETTINGS_FILE")
+    MCP_SERVER_URL=$(jq -r '.Values.AIServicesMCPToolServerUrl // empty' "$LOCAL_SETTINGS_FILE")
     
     if [ -n "$ELASTICSEARCH_URI" ]; then
         echo "   ✓ Found ElasticsearchUri: $ELASTICSEARCH_URI"
@@ -79,6 +82,9 @@ if [ -f "$LOCAL_SETTINGS_FILE" ]; then
     fi
     if [ -n "$AZURE_OPENAI_INFERENCE_ID" ]; then
         echo "   ✓ Found AzureOpenAiInferenceId: $AZURE_OPENAI_INFERENCE_ID"
+    fi
+    if [ -n "$MCP_SERVER_URL" ]; then
+        echo "   ✓ Found AIServicesMCPToolServerUrl: $MCP_SERVER_URL"
     fi
     echo ""
 else
@@ -112,8 +118,14 @@ fi
 echo ""
 echo "🔧 Updating Function App settings..."
 
-# Build the MCP Server URL from Elasticsearch URI (remove port and add MCP path)
-MCP_SERVER_URL=$(echo "$ELASTICSEARCH_URI" | sed 's/:[0-9]*$//' | sed 's|$|/api/agent_builder/mcp|')
+# Get MCP Server URL from local.settings.json (don't construct it from Elasticsearch URI)
+if [ "$USE_LOCAL_SETTINGS" = true ] && [ -f "$LOCAL_SETTINGS_FILE" ]; then
+    MCP_SERVER_URL=$(jq -r '.Values.AIServicesMCPToolServerUrl // empty' "$LOCAL_SETTINGS_FILE")
+fi
+
+if [ -z "$MCP_SERVER_URL" ]; then
+    read -p "Enter MCP Server URL (e.g., https://your-deployment.kb.region.elastic.cloud/api/agent_builder/mcp): " MCP_SERVER_URL
+fi
 
 # Build the settings array
 SETTINGS=(
