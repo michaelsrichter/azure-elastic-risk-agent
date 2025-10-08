@@ -1,4 +1,4 @@
-# UI Layout Updates - CRAP Chat Interface
+# UI Layout Updates - CRAK Chat Interface
 
 ## Changes Made
 
@@ -14,7 +14,7 @@
      - **Github** (links to repository)
      - **Blog** (placeholder link)
    - Responsive design with brand name visible on mobile
-   - Full "Contoso Risk Analysis Platform" text on desktop
+   - Full "Contoso Risk Agent Knowledgebase" text on desktop
 
 ### 3. **Optimized Vertical Layout**
    - Removed large hero/header section from chat area
@@ -31,14 +31,14 @@
 
 ### 5. **Compact Welcome Message**
    - Reduced welcome message size and padding
-   - Changed from "Welcome to CRAP!" to just "Welcome!"
+   - Changed from "Welcome to CRAK!" to just "Welcome!"
    - Smaller heading and subtitle for better space utilization
 
 ## Layout Structure
 
 ```
 ┌─────────────────────────────────────────┐
-│  Top Nav: CRAP | About | Github | Blog  │ (compact, gradient)
+│  Top Nav: CRAK | About | Github | Blog  │ (compact, gradient)
 ├─────────────────────────────────────────┤
 │                                         │
 │  Welcome Message (centered, compact)   │ (only when empty)
