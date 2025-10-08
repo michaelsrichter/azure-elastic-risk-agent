@@ -1,0 +1,211 @@
+@page "/faq"
+
+<PageTitle>FAQ - Contoso Risk Analysis Platform</PageTitle>
+
+<div class="info-page">
+    <div class="info-container">
+        <h1>Frequently Asked Questions</h1>
+        
+        <div class="info-section">
+            <p class="lead">
+                Common questions about the Contoso Risk Analysis Platform and how to use it.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What is the Contoso Risk Analysis Platform?</h2>
+            <p>
+                CRAP is an AI-powered demonstration platform that showcases the integration of Microsoft Azure AI 
+                and Elasticsearch for intelligent document analysis and risk assessment. It was built for ElasticON 
+                2025 to demonstrate best practices and architectural patterns for combining these technologies.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Is this really free?</h2>
+            <p>
+                Yes! This is an open-source demonstration project. The code is completely free to use, modify, 
+                and deploy. However, running your own instance will incur costs from the underlying Azure and 
+                Elasticsearch services you use (compute, AI models, storage, etc.).
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Can I use this for production workloads?</h2>
+            <p>
+                This is a demonstration project designed for learning and reference. While it showcases production-ready 
+                patterns and best practices, you should carefully review and adapt the code for your specific security, 
+                compliance, and scalability requirements before using it in production.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What kind of documents can I analyze?</h2>
+            <p>
+                Currently, the platform supports PDF documents. It extracts text from PDFs, chunks the content for 
+                optimal processing, and indexes everything in Elasticsearch. The AI agent can then answer questions 
+                about the document content and provide risk assessments.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>How does the AI agent work?</h2>
+            <p>
+                The platform uses Azure AI Foundry with GPT-4 models to power the conversational agent. When you ask 
+                a question, the agent searches Elasticsearch for relevant document chunks using semantic search, then 
+                uses that context to generate intelligent, informed responses about risk factors and compliance issues.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What is semantic search?</h2>
+            <p>
+                Semantic search understands the meaning and context of your query, not just keyword matching. When you 
+                ask "What are the compliance risks?", the system understands you're looking for regulatory and legal 
+                concerns, even if those exact words don't appear in the documents. This is powered by Azure OpenAI 
+                embeddings indexed in Elasticsearch.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Can I use this with Microsoft Teams?</h2>
+            <p>
+                Yes! The solution includes a Microsoft Teams bot that provides the same risk assessment capabilities 
+                directly within Teams. Check the documentation on GitHub for deployment instructions.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What is Content Safety and why is it included?</h2>
+            <p>
+                Azure Content Safety helps ensure responsible AI usage by detecting jailbreak attempts and moderating 
+                inappropriate content. It's configurable with three modes: Disabled (no checks), Audit (log but allow), 
+                and Enforce (block unsafe content). This demonstrates how to build safe AI applications.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>How do I deploy my own instance?</h2>
+            <p>
+                The repository includes Azure Developer CLI (azd) templates for easy deployment. Simply clone the repo, 
+                run <code>azd auth login</code> followed by <code>azd up</code>, and the infrastructure will be 
+                provisioned automatically. Check the Azure Deployment Guide in the documentation for detailed instructions.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What Azure services does this use?</h2>
+            <p>
+                The platform uses Azure Functions (Flex Consumption), Azure AI Foundry, Azure OpenAI, Azure Content 
+                Safety, Azure Static Web Apps, Application Insights, and Azure Storage. All are deployed and configured 
+                automatically with the azd templates.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Do I need to set up Elasticsearch myself?</h2>
+            <p>
+                Yes, you'll need an Elasticsearch cluster (either Elastic Cloud or self-hosted). The deployment guide 
+                includes a script to update your Elasticsearch configuration after deploying the Azure resources. 
+                Elasticsearch is not automatically provisioned by the azd templates.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>How is conversation context maintained?</h2>
+            <p>
+                The platform maintains conversation state using thread IDs and agent IDs from Azure AI Foundry. Your 
+                conversation history is preserved within a session, allowing you to ask follow-up questions and have 
+                context-aware discussions about your documents.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Can I customize the chunking strategy?</h2>
+            <p>
+                Yes! The text chunking is configurable through application settings. You can adjust chunk size, overlap, 
+                and even the chunking algorithm. The platform uses a recursive text chunking service by default, but 
+                you can implement your own strategy if needed.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What models does it use?</h2>
+            <p>
+                The platform is designed to work with GPT-4 models from Azure OpenAI for the conversational agent and 
+                text-embedding-ada-002 for generating embeddings for semantic search. Model selection is configurable 
+                in the application settings.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Is there monitoring and logging?</h2>
+            <p>
+                Yes, comprehensive monitoring is built-in through Azure Application Insights. You can track performance, 
+                view logs, diagnose errors, and analyze usage patterns. The platform also uses Microsoft Clarity for 
+                web analytics on the frontend.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>How do I contribute to the project?</h2>
+            <p>
+                This is an open-source demonstration project on GitHub. You're welcome to fork the repository, submit 
+                issues, and propose changes through pull requests. Check the repository for contribution guidelines.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Where can I learn more?</h2>
+            <p>
+                The GitHub repository contains extensive documentation covering architecture, deployment, configuration, 
+                and component details. Start with the main README and explore the docs folder for comprehensive guides.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Who created this?</h2>
+            <p>
+                This platform was created by <a href="https://aka.ms/mrichter" target="_blank">Mike Richter</a> as a 
+                demonstration project for ElasticON 2025, showcasing how Microsoft Azure and Elasticsearch can work 
+                together to build intelligent risk assessment solutions.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Can I use this for other types of document analysis?</h2>
+            <p>
+                Absolutely! While designed for risk assessment, the architecture and patterns can be adapted for any 
+                document analysis use case: contract review, research paper analysis, technical documentation search, 
+                legal discovery, and more. The AI agent's behavior is configurable through system prompts.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>What happens to my data?</h2>
+            <p>
+                Your documents are processed and indexed in Elasticsearch, and conversation data is maintained by 
+                Azure AI Foundry. See our Privacy Policy for complete details. If you deploy your own instance, you 
+                have full control over data storage and retention.
+            </p>
+        </div>
+
+        <div class="faq-item">
+            <h2>Is this enterprise-ready?</h2>
+            <p>
+                The platform demonstrates enterprise-ready patterns including serverless architecture, managed identities, 
+                comprehensive logging, content safety, and scalable design. However, as a demo project, you should review 
+                and adapt it for your specific enterprise requirements around security, compliance, and governance.
+            </p>
+        </div>
+
+        <div class="cta-section">
+            <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank" class="cta-button">
+                View on GitHub
+            </a>
+            <a href="/documentation" class="cta-button secondary">
+                Read Documentation
+            </a>
+        </div>
+    </div>
+</div>

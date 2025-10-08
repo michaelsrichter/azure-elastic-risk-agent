@@ -1,0 +1,91 @@
+@page "/pricing"
+
+<PageTitle>Pricing - Contoso Risk Analysis Platform</PageTitle>
+
+<div class="info-page">
+    <div class="info-container">
+        <h1>Pricing</h1>
+        
+        <div class="info-section">
+            <p class="lead">
+                Simple, transparent, and completely free. Yes, you read that right!
+            </p>
+        </div>
+
+        <div class="pricing-card featured">
+            <div class="pricing-badge">DEMO PROJECT</div>
+            <h2>Free Forever</h2>
+            <div class="price">
+                <span class="currency">$</span>
+                <span class="amount">0</span>
+                <span class="period">/forever</span>
+            </div>
+            <p class="pricing-description">
+                This is a demonstration project built to showcase Azure AI and Elasticsearch integration. 
+                All features are available at no cost.
+            </p>
+            <ul class="pricing-features">
+                <li>✓ Full access to all features</li>
+                <li>✓ AI-powered risk assessment</li>
+                <li>✓ Unlimited document processing</li>
+                <li>✓ Semantic search capabilities</li>
+                <li>✓ Microsoft Teams integration</li>
+                <li>✓ Complete source code on GitHub</li>
+                <li>✓ Comprehensive documentation</li>
+                <li>✓ Community support</li>
+            </ul>
+        </div>
+
+        <div class="info-section">
+            <h2>About This Project</h2>
+            <p>
+                The Contoso Risk Analysis Platform is an open-source demonstration project created for 
+                ElasticON 2025. It's designed to showcase best practices and architectural patterns for 
+                integrating Microsoft Azure AI services with Elasticsearch.
+            </p>
+            <p>
+                This is not a commercial product—it's a reference implementation that developers and 
+                organizations can use to learn from and build upon for their own solutions.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Cost Considerations</h2>
+            <p>
+                While this demo application is free and open source, running your own instance will incur 
+                costs from the underlying Azure and Elasticsearch services:
+            </p>
+            <ul class="feature-list">
+                <li><strong>Azure Functions:</strong> Serverless compute costs based on execution time (Flex Consumption plan)</li>
+                <li><strong>Azure AI Foundry:</strong> API calls to GPT-4 models are billed per token</li>
+                <li><strong>Azure OpenAI:</strong> Embedding generation for semantic search</li>
+                <li><strong>Elasticsearch:</strong> Cluster hosting costs (Elastic Cloud or self-hosted)</li>
+                <li><strong>Azure Storage:</strong> Minimal costs for Function App storage</li>
+                <li><strong>Application Insights:</strong> Monitoring and logging costs</li>
+            </ul>
+            <p>
+                The serverless architecture is designed to be cost-efficient, especially for development 
+                and small-scale deployments. Refer to Azure and Elastic pricing calculators for specific 
+                cost estimates based on your usage.
+            </p>
+        </div>
+
+        <div class="info-section">
+            <h2>Getting Started</h2>
+            <p>
+                Ready to deploy your own instance? The complete deployment guide and source code are 
+                available on GitHub. The repository includes Azure Developer CLI (azd) templates for 
+                easy deployment and configuration.
+            </p>
+        </div>
+
+        <div class="cta-section">
+            <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank" class="cta-button">
+                View on GitHub
+            </a>
+            <a href="/documentation" class="cta-button secondary">
+                Read Documentation
+            </a>
+        </div>
+    </div>
+</div>
