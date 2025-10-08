@@ -4,12 +4,21 @@ set -e
 echo "🔑 Configuring Internal Function Key..."
 
 # Get the function app name from azd environment
-FUNCTION_APP_NAME=$(azd env get-value AZURE_FUNCTION_APP_NAME)
 RESOURCE_GROUP=$(azd env get-value AZURE_RESOURCE_GROUP)
 
+# Get the function app name from azd show output
+if command -v jq >/dev/null 2>&1; then
+    FUNCTION_APP_NAME=$(azd show --output json | jq -r '.services.api.target.resourceIds[0]' | cut -d'/' -f9)
+else
+    # Parse without jq
+    RESOURCE_ID=$(azd show --output json | grep -o '"resourceIds":\s*\[\s*"[^"]*"' | grep 'Microsoft.Web/sites' | cut -d'"' -f4)
+    FUNCTION_APP_NAME=$(echo "$RESOURCE_ID" | cut -d'/' -f9)
+fi
+
 if [ -z "$FUNCTION_APP_NAME" ] || [ -z "$RESOURCE_GROUP" ]; then
-    echo "❌ Error: Could not find AZURE_FUNCTION_APP_NAME or AZURE_RESOURCE_GROUP in azd environment"
-    echo "Please run 'azd env refresh' first"
+    echo "❌ Error: Could not determine Function App name or Resource Group"
+    echo "Function App: $FUNCTION_APP_NAME"
+    echo "Resource Group: $RESOURCE_GROUP"
     exit 1
 fi
 

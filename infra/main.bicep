@@ -55,6 +55,9 @@ param elasticApiKey string = 'your-elasticsearch-api-key-here'
 @description('Content Safety Jailbreak Detection Mode')
 param contentSafetyJailbreakDetectionMode string = 'Audit'
 
+@description('Skip role assignments (set to true if role assignments already exist to avoid conflicts)')
+param skipRoleAssignments bool = false
+
 // Generate a unique token to be used in naming resources
 var resourceToken = uniqueString(subscription().id, resourceGroup().id, location, environmentName)
 
@@ -481,9 +484,9 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       }
     }
   }
-  dependsOn: [
+  dependsOn: !skipRoleAssignments ? [
     storageRoleAssignments
-  ]
+  ] : []
 }
 
 // Note: Function App Configuration is now included directly in the functionApp resource above
@@ -519,7 +522,7 @@ resource functionAppDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-0
 
 // Role assignments for the managed identity
 resource storageRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [
-  for role in [
+  for (role, index) in (!skipRoleAssignments ? [
     {
       name: 'Storage Blob Data Owner'
       id: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
@@ -536,8 +539,8 @@ resource storageRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04
       name: 'Storage Table Data Contributor'
       id: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
     }
-  ]: {
-    name: guid(storageAccount.id, managedIdentity.id, role.id)
+  ] : []): {
+    name: guid(storageAccount.id, managedIdentity.id, role.id, string(index))
     scope: storageAccount
     properties: {
       roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', role.id)
@@ -551,7 +554,7 @@ resource storageRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04
 // Avoided here to prevent role assignment conflicts during deployment
 
 // Monitoring Metrics Publisher role assignment for Application Insights
-resource monitoringRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource monitoringRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
   name: guid(applicationInsights.id, managedIdentity.id, '3913510d-42f4-4e42-8a64-420c390055eb')
   scope: applicationInsights
   properties: {
@@ -565,7 +568,7 @@ resource monitoringRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-
 }
 
 // Static Web App Contributor role assignment for the managed identity
-resource staticWebAppRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource staticWebAppRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
   name: guid(staticWebApp.id, managedIdentity.id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
   scope: staticWebApp
   properties: {
@@ -579,7 +582,7 @@ resource staticWebAppRoleAssignment 'Microsoft.Authorization/roleAssignments@202
 }
 
 // Key Vault Secrets Officer role for AI Hub identity
-resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
   name: guid(keyVault.id, aiHub.id, 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7')
   scope: keyVault
   properties: {
@@ -593,7 +596,7 @@ resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04
 }
 
 // Storage Blob Data Contributor role for AI Hub identity
-resource aiHubStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource aiHubStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
   name: guid(aiFoundryStorageAccount.id, aiHub.id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
   scope: aiFoundryStorageAccount
   properties: {
@@ -607,7 +610,7 @@ resource aiHubStorageRoleAssignment 'Microsoft.Authorization/roleAssignments@202
 }
 
 // Cognitive Services OpenAI User role for managed identity on AI Services
-resource aiServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource aiServicesRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
   name: guid(aiFoundryService.id, managedIdentity.id, '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd')
   scope: aiFoundryService
   properties: {
@@ -634,7 +637,7 @@ output AZURE_AI_HUB_NAME string = aiHub.name
 output AZURE_AI_HUB_ID string = aiHub.id
 output AZURE_AI_PROJECT_NAME string = aiProject.name
 output AZURE_AI_PROJECT_ID string = aiProject.id
-output AZURE_AI_PROJECT_ENDPOINT string = 'https://${aiFoundryService.properties.endpoint}/api/projects/${aiProject.name}'
+output AZURE_AI_PROJECT_ENDPOINT string = '${aiFoundryService.properties.endpoint}api/projects/${aiProject.name}'
 output AZURE_KEY_VAULT_NAME string = keyVault.name
 output AZURE_STATIC_WEB_APP_NAME string = staticWebApp.name
 output AZURE_STATIC_WEB_APP_URL string = 'https://${staticWebApp.properties.defaultHostname}'

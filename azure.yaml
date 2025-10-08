@@ -11,6 +11,76 @@ hooks:
       run: |
         echo "Configuring internal function key..."
         ./scripts/configure-function-key.sh
+        
+        echo "Post-deploy: Deploying Static Web App using SWA CLI..."
+        
+        # Check if SWA CLI is installed
+        if ! command -v swa >/dev/null 2>&1; then
+          echo "❌ SWA CLI is not installed. Installing..."
+          npm install -g @azure/static-web-apps-cli
+          if [ $? -ne 0 ]; then
+            echo "❌ Failed to install SWA CLI. Please install manually: npm install -g @azure/static-web-apps-cli"
+            exit 1
+          fi
+          echo "✅ SWA CLI installed successfully"
+        else
+          echo "✅ SWA CLI is already installed (version: $(swa --version 2>/dev/null | head -1))"
+        fi
+        
+        # Get the resource group and Static Web App name from azd environment
+        RESOURCE_GROUP=$(azd env get-values | grep AZURE_RESOURCE_GROUP | cut -d'=' -f2 | tr -d '"')
+        SWA_NAME=$(azd env get-values | grep AZURE_STATIC_WEB_APPS_NAME | cut -d'=' -f2 | tr -d '"')
+        
+        if [ -z "$RESOURCE_GROUP" ] || [ -z "$SWA_NAME" ]; then
+          echo "❌ Could not retrieve resource group or SWA name from environment"
+          echo "Attempting to find resources..."
+          
+          # Fallback: try to get the resource group from azd show (with and without jq)
+          if command -v jq >/dev/null 2>&1; then
+            RESOURCE_GROUP=$(azd show --output json | jq -r '.services.web.target.resourceIds[0]' | cut -d'/' -f5)
+            SWA_NAME=$(azd show --output json | jq -r '.services.web.target.resourceIds[0]' | cut -d'/' -f9)
+          else
+            # Parse JSON without jq - get the web service resource ID
+            RESOURCE_ID=$(azd show --output json | grep -o '"resourceIds":\s*\[\s*"[^"]*"' | grep 'staticSites' | cut -d'"' -f4)
+            RESOURCE_GROUP=$(echo "$RESOURCE_ID" | cut -d'/' -f5)
+            SWA_NAME=$(echo "$RESOURCE_ID" | cut -d'/' -f9)
+          fi
+        fi
+        
+        if [ -z "$RESOURCE_GROUP" ] || [ -z "$SWA_NAME" ]; then
+          echo "❌ Still could not determine resource names. Skipping SWA deployment."
+          echo "You can manually deploy using: swa deploy src/ElasticOn.RiskAgent.Demo.Web/bin/wwwroot --resource-group <rg-name> --app-name <swa-name> --env production"
+          exit 0
+        fi
+        
+        echo "Using Resource Group: $RESOURCE_GROUP"
+        echo "Using SWA Name: $SWA_NAME"
+        
+        # Build the web application
+        echo "Building web application..."
+        cd src/ElasticOn.RiskAgent.Demo.Web
+        dotnet publish -c Release -o bin --verbosity quiet
+        if [ $? -ne 0 ]; then
+          echo "❌ Failed to build web application"
+          exit 1
+        fi
+        cd ../..
+        
+        # Deploy using SWA CLI
+        echo "Deploying to Static Web App (production)..."
+        swa deploy src/ElasticOn.RiskAgent.Demo.Web/bin/wwwroot \
+          --resource-group "$RESOURCE_GROUP" \
+          --app-name "$SWA_NAME" \
+          --env production \
+          --no-use-keychain \
+          --verbose=silly 2>/dev/null
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Static Web App deployed successfully!"
+          echo "🌐 Your application is available at: https://$(az staticwebapp show --name "$SWA_NAME" --resource-group "$RESOURCE_GROUP" --query defaultHostname -o tsv)"
+        else
+          echo "⚠️  SWA deployment completed with warnings. Please check the Static Web App in Azure Portal."
+        fi
 
 services:
   api:

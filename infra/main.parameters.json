@@ -39,7 +39,10 @@
       "value": "${CONTENT_SAFETY_SUBSCRIPTION_KEY=}"
     },
     "contentSafetyJailbreakDetectionMode": {
-      "value": "${CONTENT_SAFETY_JAILBREAK_DETECTION_MODE=Audit}"
+      "value": "${CONTENT_SAFETY_JAILBREAK_DETECTION_MODE=Disabled}"
+    },
+    "skipRoleAssignments": {
+      "value": "${SKIP_ROLE_ASSIGNMENTS=false}"
     }
   }
 }
