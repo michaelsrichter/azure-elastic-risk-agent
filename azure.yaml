@@ -56,9 +56,31 @@ hooks:
         echo "Using Resource Group: $RESOURCE_GROUP"
         echo "Using SWA Name: $SWA_NAME"
         
+        # Get the Function App URL from azd environment
+        FUNCTION_APP_URL=$(azd env get-values | grep AZURE_FUNCTION_APP_URL | cut -d'=' -f2 | tr -d '"')
+        
+        if [ -z "$FUNCTION_APP_URL" ]; then
+          echo "❌ Could not retrieve Function App URL from environment"
+          exit 1
+        fi
+        
+        echo "Using Function App URL: $FUNCTION_APP_URL"
+        
         # Build the web application
         echo "Building web application..."
         cd src/ElasticOn.RiskAgent.Demo.Web
+        
+        # Update appsettings.json with the correct API URL before building
+        echo "Updating appsettings.json with Function App URL..."
+        if command -v jq >/dev/null 2>&1; then
+          # Use jq if available
+          jq --arg url "$FUNCTION_APP_URL" '.ApiBaseUrl = $url' wwwroot/appsettings.json > wwwroot/appsettings.json.tmp && mv wwwroot/appsettings.json.tmp wwwroot/appsettings.json
+        else
+          # Fallback: use sed (escape forward slashes in URL)
+          ESCAPED_URL=$(echo "$FUNCTION_APP_URL" | sed 's/[\/&]/\\&/g')
+          sed -i.bak "s|\"ApiBaseUrl\":.*|\"ApiBaseUrl\": \"$ESCAPED_URL\",|" wwwroot/appsettings.json
+        fi
+        
         dotnet publish -c Release -o bin --verbosity quiet
         if [ $? -ne 0 ]; then
           echo "❌ Failed to build web application"
