@@ -152,7 +152,7 @@ public class ContentSafetyService : IContentSafetyService
             var request = new ShieldPromptRequest(userPrompt, documents);
             var payload = JsonSerializer.Serialize(request, JsonSerializerOptions.Default);
 
-            var url = $"{_endpoint}/contentsafety/text:shieldPrompt?api-version={ApiVersion}";
+            var url = $"{_endpoint}/text:shieldPrompt?api-version={ApiVersion}";
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, url);
             httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", _subscriptionKey);
