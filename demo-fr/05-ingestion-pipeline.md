@@ -1,4 +1,3 @@
-
 # 5. Pipeline d’ingestion
 
 ## Indexation des PDF : Power Automate + Azure Functions + Elastic
@@ -14,30 +13,30 @@
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'fontSize':'16px', 'fontFamily':'arial'}}}%%
 flowchart TB
-  subgraph Source["📁 SOURCE DE DONNÉES"]
-    SP["&lt;b&gt;SharePoint&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Bibliothèques&lt;br/&gt;de documents PDF"]
+  subgraph Source["📁 DATA SOURCE"]
+    SP["<b>SharePoint</b><br/><br/>PDF Document<br/>Libraries"]
   end
 
   subgraph Orchestration["⚡ ORCHESTRATION"]
-    PA["&lt;b&gt;Power Automate&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Déclencheur de téléversement&lt;br/&gt;Extraction des propriétés"]
+    PA["<b>Power Automate</b><br/><br/>File Upload Trigger<br/>Property Extraction"]
   end
 
-  subgraph Processing["🔧 TRAITEMENT DU TEXTE"]
-    AF["&lt;b&gt;Azure Function&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;① Télécharger PDF&lt;br/&gt;② Extraire texte&lt;br/&gt;③ Segmenter contenu&lt;br/&gt;④ Envoyer à Elasticsearch"]
+  subgraph Processing["🔧 TEXT PROCESSING"]
+    AF["<b>Azure Function</b><br/><br/>① Download PDF<br/>② Extract Text<br/>③ Chunk Content<br/>④ Send to Elasticsearch"]
   end
 
   subgraph Storage["💾 ELASTICSEARCH"]
-    ES["&lt;b&gt;Index Elasticsearch&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Documents + Métadonnées&lt;br/&gt;⬇️&lt;br/&gt;&lt;b&gt;Champ semantic_text&lt;/b&gt;&lt;br/&gt;Génère automatiquement Embeddings"]
+    ES["<b>Elasticsearch Index</b><br/><br/>Documents + Metadata<br/>⬇️<br/><b>semantic_text Field</b><br/>Auto-generates Embeddings"]
   end
 
   %% Flow
-  SP ==&gt;|Téléversement PDF| PA
-  PA ==&gt;|Propriétés&lt;br/&gt;du fichier &amp; contenu| AF
-  AF ==&gt;|Segments de texte&lt;br/&gt;+ métadonnées| ES
+  SP ==>|PDF Upload| PA
+  PA ==>|File Properties<br/>& Content| AF
+  AF ==>|Text Chunks<br/>+ Metadata| ES
 
   %% Annotations
-  AF -.-|Stratégie de segmentation :&lt;br/&gt;Taille + chevauchement| AF
-  ES -.-|Vectorisation automatique&lt;br/&gt;Pas d’embeddings manuels| ES
+  AF -.-|Chunking Strategy:<br/>Size + Overlap| AF
+  ES -.-|Automatic Vectorization<br/>No Manual Embedding| ES
 
   %% Styling with bold colors and high contrast
   classDef sourceStyle fill:#0078D4,stroke:#004578,stroke-width:3px,color:#fff,font-weight:bold;
@@ -49,3 +48,9 @@ flowchart TB
   class PA orchestrationStyle;
   class AF processingStyle;
   class ES storageStyle;
+```
+## Navigation
+
+- [← Previous: Solution Architecture Overview](./04-architecture-overview.md)
+- [Back to Demo Index](./README.md)
+- [Next: Vectorization & Semantic Search →](./06-vectorization-semantic-search.md)

@@ -33,31 +33,40 @@ Le [Microsoft Agent Framework](https://devblogs.microsoft.com/foundry/introducin
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'fontSize':'16px', 'fontFamily':'arial'}}}%%
 flowchart TD
-  A["&lt;b&gt;1. Requête utilisateur&lt;/b&gt;&lt;br/&gt;💬&lt;br/&gt;Entrée en langage naturel"]
-  B["&lt;b&gt;2. Agent IA&lt;/b&gt;&lt;br/&gt;🤖&lt;br/&gt;Moteur de raisonnement LLM"]
-  C{"&lt;b&gt;3. Besoin de données externes ?&lt;/b&gt;&lt;br/&gt;🔍&lt;br/&gt;Point de décision"}
-  D["&lt;b&gt;4. Découverte des outils MCP&lt;/b&gt;&lt;br/&gt;🔧&lt;br/&gt;Requête des outils disponibles"]
-  E["&lt;b&gt;5. Outil de recherche Elastic&lt;/b&gt;&lt;br/&gt;🔎&lt;br/&gt;Exécution de la recherche hybride"]
-  F["&lt;b&gt;6. Résultats vers l’agent&lt;/b&gt;&lt;br/&gt;📊&lt;br/&gt;Documents + Métadonnées"]
-  G["&lt;b&gt;7. Composer réponse&lt;/b&gt;&lt;br/&gt;✍️&lt;br/&gt;Synthèse LLM"]
-  H["&lt;b&gt;8. Réponse à l’utilisateur&lt;/b&gt;&lt;br/&gt;💬&lt;br/&gt;Réponse contextuelle"]
+  A["<b>1. User Query</b><br/>💬<br/>Natural Language Input"]
+  B["<b>2. AI Agent</b><br/>🤖<br/>LLM Reasoning Engine"]
+  C{"<b>3. Need External Data?</b><br/>🔍<br/>Decision Point"}
+  D["<b>4. MCP Tool Discovery</b><br/>🔧<br/>Available Tools Query"]
+  E["<b>5. Elastic Search Tool</b><br/>🔎<br/>Hybrid Search Execution"]
+  F["<b>6. Results to Agent</b><br/>📊<br/>Documents + Metadata"]
+  G["<b>7. Compose Response</b><br/>✍️<br/>LLM Synthesis"]
+  H["<b>8. Response to User</b><br/>💬<br/>Contextual Answer"]
 
-  A ==&gt;|Requête| B
-  B ==&gt;|Analyse| C
-  C ==&gt;|Oui| D
-  D ==&gt;|Découverte| E
-  E ==&gt;|Recherche| F
-  F ==&gt;|Contexte| G
-  C -.-&gt;|Non| G
-  G ==&gt;|Réponse| H
+  A ==>|Query| B
+  B ==>|Analyze| C
+  C ==>|Yes| D
+  D ==>|Discover| E
+  E ==>|Search| F
+  F ==>|Context| G
+  C -.->|No| G
+  G ==>|Answer| H
 
   %% Styling with bold colors and high contrast
   classDef userStyle fill:#0078D4,stroke:#004578,stroke-width:3px,color:#fff,font-weight:bold;
-  classDef agentStyle fill:#5E5E5E,stroke:#2C2C2C,stroke-width:3px;color:#fff,font-weight:bold;
-  classDef decisionStyle fill:#FFB900,stroke:#A77800,stroke-width:3px;color:#000,font-weight:bold;
+  classDef agentStyle fill:#5E5E5E,stroke:#2C2C2C,stroke-width:3px,color:#fff,font-weight:bold;
+  classDef decisionStyle fill:#FFB900,stroke:#A77800,stroke-width:3px,color:#000,font-weight:bold;
   classDef mcpStyle fill:#742774,stroke:#4B1A4B,stroke-width:3px,color:#fff,font-weight:bold;
   classDef elasticStyle fill:#FEC514,stroke:#CB9A10,stroke-width:3px,color:#000,font-weight:bold;
-  classDef resultsStyle fill:#00B294,stroke:#00786B,stroke-width:3px;color:#fff,font-weight:bold;
+  classDef resultsStyle fill:#00B294,stroke:#00786B,stroke-width:3px,color:#fff,font-weight:bold;
   classDef composeStyle fill:#8B5CF6,stroke:#6B21A8,stroke-width:3px,color:#fff,font-weight:bold;
   classDef responseStyle fill:#107C10,stroke:#0B5A0B,stroke-width:3px,color:#fff,font-weight:bold;
   
+  class A userStyle;
+  class B agentStyle;
+  class C decisionStyle;
+  class D mcpStyle;
+  class E elasticStyle;
+  class F resultsStyle;
+  class G composeStyle;
+  class H responseStyle;
+```
