@@ -15,24 +15,24 @@
 %%{init: {'theme':'base', 'themeVariables': { 'fontSize':'16px', 'fontFamily':'arial'}}}%%
 flowchart TB
   %% Nodes
-  SP["&lt;b&gt;SharePoint&lt;/b&gt;&lt;br/&gt;(Source de données)&lt;br/&gt;📁"]
-  PA["&lt;b&gt;Power Automate&lt;/b&gt;&lt;br/&gt;(Orchestration)&lt;br/&gt;⚡"]
-  AF["&lt;b&gt;Azure Function&lt;/b&gt;&lt;br/&gt;(Ingestion &amp; Transformation)&lt;br/&gt;⚙️"]
-  ES["&lt;b&gt;Elasticsearch&lt;/b&gt;&lt;br/&gt;(Azure Native - Elastic)&lt;br/&gt;🔍"]
-  AG["&lt;b&gt;Agent IA&lt;/b&gt;&lt;br/&gt;(Microsoft Agent Framework)&lt;br/&gt;🤖"]
-  TE["&lt;b&gt;Teams / M365 Copilot&lt;/b&gt;&lt;br/&gt;(Interface utilisateur)&lt;br/&gt;💬"]
+  SP["<b>SharePoint</b><br/>(Data Source)<br/>📁"]
+  PA["<b>Power Automate</b><br/>(Orchestration)<br/>⚡"]
+  AF["<b>Azure Function</b><br/>(Ingest & Transform)<br/>⚙️"]
+  ES["<b>Elasticsearch</b><br/>(Azure Native - Elastic)<br/>🔍"]
+  AG["<b>AI Agent</b><br/>(Microsoft Agent Framework)<br/>🤖"]
+  TE["<b>Teams / M365 Copilot</b><br/>(User Interface)<br/>💬"]
 
   %% Flow - Using thick arrows
-  SP ==&gt;|Pour chaque PDF| PA
-  PA ==&gt;|Propriétés&lt;br/&gt;du fichier &amp; contenu| AF
-  AF ==&gt;|Documents&lt;br/&gt;traités| ES
-  ES ==&gt;|Résultats de recherche&lt;br/&gt;via MCP| AG
-  AG ==&gt;|Réponse IA| TE
+  SP ==>|For Each PDF| PA
+  PA ==>|File Properties<br/>& Content| AF
+  AF ==>|Processed<br/>Documents| ES
+  ES ==>|Search Results<br/>via MCP| AG
+  AG ==>|AI Response| TE
 
   %% Security annotation
   AF -.-|🔐 Azure Private Link| ES
 
-  %% Styling
+  %% Styling with bold colors and high contrast
   classDef sharepoint fill:#0078D4,stroke:#004578,stroke-width:3px,color:#fff,font-weight:bold;
   classDef automation fill:#742774,stroke:#4B1A4B,stroke-width:3px,color:#fff,font-weight:bold;
   classDef azureFunc fill:#00A4EF,stroke:#006D9E,stroke-width:3px,color:#fff,font-weight:bold;
@@ -47,7 +47,4 @@ flowchart TB
   class AG microsoft;
   class TE teams;
 ```
-
-
----
 
