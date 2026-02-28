@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
+@inject NavigationManager Nav
+@implements IDisposable
+
+<div class="page @PageThemeClass">
     <NavMenu />
     
     <div class="content-wrapper">
@@ -8,3 +11,23 @@
     
     <Footer />
 </div>
+
+@code {
+    private bool IsInternalPage => Nav.Uri.Contains("/internal", StringComparison.OrdinalIgnoreCase);
+    private string PageThemeClass => IsInternalPage ? "internal-theme" : "";
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

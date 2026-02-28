@@ -25,4 +25,19 @@ public class SendMessageRequest
     /// Valid values: "Disabled", "Audit", "Enforce"
     /// </summary>
     public string? ContentSafetyMode { get; set; }
+    
+    /// <summary>
+    /// Optional agent name for the Internal page. If specified, a dynamic agent will be created or reused.
+    /// </summary>
+    public string? AgentName { get; set; }
+    
+    /// <summary>
+    /// Optional agent instructions for the Internal page dynamic agent.
+    /// </summary>
+    public string? AgentInstructions { get; set; }
+    
+    /// <summary>
+    /// Optional comma-delimited MCP tool names for the Internal page dynamic agent.
+    /// </summary>
+    public string? AgentTools { get; set; }
 }

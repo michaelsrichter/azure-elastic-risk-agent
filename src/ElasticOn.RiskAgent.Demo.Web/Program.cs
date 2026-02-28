@@ -19,10 +19,20 @@ builder.Services.AddSingleton<ChatStateService>();
 // Register ClarityService for analytics tracking
 builder.Services.AddScoped<ClarityService>();
 
+// Register LocalizationService as scoped (in Blazor WASM, scoped = singleton lifetime)
+builder.Services.AddScoped<LocalizationService>();
+
+// Register AgentConfigDialogService for nav-to-page communication
+builder.Services.AddScoped<AgentConfigDialogService>();
+
 var host = builder.Build();
 
 // Initialize Microsoft Clarity tracking
 var clarityService = host.Services.GetRequiredService<ClarityService>();
 await clarityService.InitializeAsync();
+
+// Initialize localization (reads saved locale from localStorage)
+var localizationService = host.Services.GetRequiredService<LocalizationService>();
+await localizationService.InitializeAsync();
 
 await host.RunAsync();

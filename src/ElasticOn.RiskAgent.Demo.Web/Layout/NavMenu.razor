@@ -1,14 +1,90 @@
-﻿<nav class="top-nav">
+﻿@using ElasticOn.RiskAgent.Demo.Web.Services
+@using ElasticOn.RiskAgent.Demo.Web.Components
+@inject LocalizationService L
+@inject AgentConfigDialogService AgentConfigDialog
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@implements IDisposable
+
+<nav class="top-nav @NavThemeClass">
     <div class="nav-container">
         <a class="navbar-brand" href="/">
-            <span class="brand-name">CRAK</span>
-            <span class="brand-full">Contoso Risk Agent Knowledgebase</span>
+            <span class="brand-name">@L["AppName"]</span>
+            <span class="brand-full">@(IsInternalPage ? L["AppFullNameInternal"] : L["AppFullName"])</span>
         </a>
         
         <div class="nav-links">
-            <a href="/about" class="nav-link">About</a>
-            <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank" class="nav-link">Github</a>
-            <a href="/faq" class="nav-link">FAQ</a>
+            @if (IsInternalPage)
+            {
+                @if (!string.IsNullOrEmpty(currentAgentName))
+                {
+                    <span class="index-badge" title="@currentAgentName">
+                        @L["AgentConfigCurrentPrefix"] @TruncateText(currentAgentName)
+                    </span>
+                }
+                <button class="nav-link nav-button" @onclick="OpenAgentConfigDialog">@L["NavAgentConfig"]</button>
+            }
+            <a href="/about" class="nav-link">@L["NavAbout"]</a>
+            <a href="https://github.com/michaelsrichter/azure-elastic-risk-agent" target="_blank" class="nav-link">@L["NavGithub"]</a>
+            <a href="/faq" class="nav-link">@L["NavFAQ"]</a>
+            @if (!IsInternalPage)
+            {
+                <a href="/internal" class="nav-link">@L["NavInternal"]</a>
+            }
+            else
+            {
+                <a href="/" class="nav-link">Home</a>
+            }
+            <LanguagePicker />
         </div>
     </div>
 </nav>
+
+@code {
+    private string? currentAgentName;
+
+    private bool IsInternalPage => Nav.Uri.Contains("/internal", StringComparison.OrdinalIgnoreCase);
+    private string NavThemeClass => IsInternalPage ? "nav-internal" : "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        L.OnLanguageChanged += OnLanguageChanged;
+        await LoadAgentName();
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        await LoadAgentName();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAgentName()
+    {
+        try
+        {
+            currentAgentName = await JS.InvokeAsync<string?>("localStorage.getItem", "agentName");
+        }
+        catch { }
+    }
+
+    private void OpenAgentConfigDialog()
+    {
+        AgentConfigDialog.RequestOpen();
+    }
+
+    private static string TruncateText(string text) =>
+        text.Length > 20 ? text.Substring(0, 17) + "..." : text;
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+        L.OnLanguageChanged -= OnLanguageChanged;
+    }
+}
+
