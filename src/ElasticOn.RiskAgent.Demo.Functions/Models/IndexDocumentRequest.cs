@@ -18,4 +18,11 @@ internal sealed record IndexDocumentRequest
 
     [JsonPropertyName("elasticsearchConfig")]
     public ElasticsearchConfig? ElasticsearchConfig { get; init; }
+
+    /// <summary>
+    /// Optional: Override the Elasticsearch index name. If provided, takes precedence over
+    /// ElasticsearchConfig.IndexName and the configured default.
+    /// </summary>
+    [JsonPropertyName("elasticsearchIndexName")]
+    public string? ElasticsearchIndexName { get; init; }
 }

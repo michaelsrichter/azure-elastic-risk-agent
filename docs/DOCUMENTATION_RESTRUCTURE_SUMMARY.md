@@ -36,7 +36,7 @@ The root README.md has been completely rewritten to provide a comprehensive over
 **New Sections:**
 - **Solution Overview** - Description of all three applications (Functions, M365 Bot, Web)
 - **Architecture Diagram** - Visual representation of the microservices architecture
-- **Key Technologies** - List of technologies used (.NET 9, Azure AI Foundry, Elasticsearch, etc.)
+- **Key Technologies** - List of technologies used (.NET 10, Azure AI Foundry, Elasticsearch, etc.)
 - **Key Features** - Comprehensive feature list for all components
 - **Local Development** - Instructions for running all three applications
 - **Documentation** - Comprehensive links to all documentation

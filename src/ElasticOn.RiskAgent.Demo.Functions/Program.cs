@@ -3,6 +3,8 @@ using Microsoft.Azure.Functions.Worker.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Azure.Core;
+using Azure.Identity;
 using ElasticOn.RiskAgent.Demo.Functions.Services;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -69,6 +71,10 @@ builder.Services
 // Register Azure AI Agent services for Chat function
 builder.Services
     .AddSingleton<IAzureAIAgentService, AzureAIAgentService>();
+
+// Register DefaultAzureCredential for Managed Identity auth (used by Content Safety and other services)
+builder.Services
+    .AddSingleton<TokenCredential>(new DefaultAzureCredential());
 
 builder.Services
     .AddSingleton<IContentSafetyService, ContentSafetyService>();

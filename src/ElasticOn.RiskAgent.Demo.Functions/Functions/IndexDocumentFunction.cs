@@ -88,8 +88,20 @@ internal sealed class IndexDocumentFunction
                 indexRequest.ElasticsearchConfig != null);
 
             // Index the document using custom config if provided, otherwise use default config
+            // Merge standalone ElasticsearchIndexName into ElasticsearchConfig if provided
+            ElasticsearchConfig? effectiveConfig = indexRequest.ElasticsearchConfig;
+            if (!string.IsNullOrWhiteSpace(indexRequest.ElasticsearchIndexName))
+            {
+                effectiveConfig = new ElasticsearchConfig
+                {
+                    Uri = indexRequest.ElasticsearchConfig?.Uri,
+                    ApiKey = indexRequest.ElasticsearchConfig?.ApiKey,
+                    IndexName = indexRequest.ElasticsearchIndexName
+                };
+            }
+
             _logger.LogInformation("Calling Elasticsearch service to index document...");
-            var success = await _elasticsearchService.IndexDocumentAsync(elasticsearchDocument, indexRequest.ElasticsearchConfig, cancellationToken);
+            var success = await _elasticsearchService.IndexDocumentAsync(elasticsearchDocument, effectiveConfig, cancellationToken);
 
             if (success)
             {

@@ -58,6 +58,9 @@ param elasticApiKey string = 'your-elasticsearch-api-key-here'
 @description('Content Safety Jailbreak Detection Mode')
 param contentSafetyJailbreakDetectionMode string = 'Audit'
 
+@description('Custom domain for the web app (added to CORS allowed origins)')
+param customDomain string = ''
+
 @description('Skip role assignments (set to true if role assignments already exist to avoid conflicts)')
 param skipRoleAssignments bool = false
 
@@ -254,11 +257,8 @@ resource aiServicesConnection 'Microsoft.MachineLearningServices/workspaces/conn
   properties: {
     category: 'AIServices'
     target: aiFoundryService.properties.endpoint
-    authType: 'ApiKey'
+    authType: 'AAD'
     isSharedToAll: true
-    credentials: {
-      key: aiFoundryService.listKeys().key1
-    }
     metadata: {
       ApiVersion: '2024-02-01'
       ApiType: 'Azure'
@@ -450,10 +450,6 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
           value: aiFoundryService.properties.endpoints['Content Safety']
         }
         {
-          name: 'AIServicesContentSafetySubscriptionKey'
-          value: aiFoundryService.listKeys().key1
-        }
-        {
           name: 'AIServicesContentSafetyJailbreakDetectionMode'
           value: contentSafetyJailbreakDetectionMode
         }
@@ -461,9 +457,11 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       cors: {
-        allowedOrigins: [
+        allowedOrigins: union([
           'https://${staticWebApp.properties.defaultHostname}'
-        ]
+        ], !empty(customDomain) ? [
+          'https://${customDomain}'
+        ] : [])
         supportCredentials: true
       }
     }
@@ -486,7 +484,7 @@ resource functionApp 'Microsoft.Web/sites@2023-12-01' = {
       }
       runtime: {
         name: 'dotnet-isolated'
-        version: '8.0'
+        version: '10.0'
       }
     }
   }
@@ -639,6 +637,35 @@ resource aiServicesSystemRoleAssignment 'Microsoft.Authorization/roleAssignments
       '64702f94-c441-49e6-a78b-ef80e0188fee'
     )
     principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Cognitive Services User role for system-assigned managed identity on AI Services
+// Required for Content Safety API access via Managed Identity
+resource cognitiveServicesUserSystemRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
+  name: guid(aiFoundryService.id, functionApp.id, 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  scope: aiFoundryService
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'a97b65f3-24c7-4388-baec-2e87135dc908'
+    )
+    principalId: functionApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Cognitive Services User role for user-assigned managed identity on AI Services
+resource cognitiveServicesUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!skipRoleAssignments) {
+  name: guid(aiFoundryService.id, managedIdentity.id, 'a97b65f3-24c7-4388-baec-2e87135dc908')
+  scope: aiFoundryService
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      'a97b65f3-24c7-4388-baec-2e87135dc908'
+    )
+    principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
 }

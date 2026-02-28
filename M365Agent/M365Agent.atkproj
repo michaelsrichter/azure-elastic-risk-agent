@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" Sdk="Microsoft.TeamsFx.Sdk">
+<!--
+  TeamsFx SDK is only available in Visual Studio with Teams Toolkit installed.
+  This project uses conditional imports so the solution builds cleanly in both
+  Visual Studio (with SDK) and VS Code / CLI (without SDK).
+-->
+<Project ToolsVersion="15.0">
   <PropertyGroup Label="Globals">
     <ProjectGuid>b069b3bd-f6bc-cc40-82ab-3fcc2ea50fdf</ProjectGuid>
   </PropertyGroup>
+
+  <!-- Import TeamsFx SDK only when building inside Visual Studio -->
+  <Import Project="Sdk.props" Sdk="Microsoft.TeamsFx.Sdk" Condition="'$(BuildingInsideVisualStudio)' == 'true'" />
+
   <ItemGroup>
     <ProjectCapability Include="ProjectConfigurationsDeclaredDimensions" />
   </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.TeamsFx.Sdk" Condition="'$(BuildingInsideVisualStudio)' == 'true'" />
+
+  <!-- Fallback no-op targets for CLI / VS Code builds where TeamsFx SDK is unavailable -->
+  <Target Name="Build" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
+  <Target Name="Clean" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
+  <Target Name="Rebuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'" DependsOnTargets="Clean;Build" />
+  <Target Name="Restore" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
+  <Target Name="Publish" Condition="'$(BuildingInsideVisualStudio)' != 'true'" />
 </Project>

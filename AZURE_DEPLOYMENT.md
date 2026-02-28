@@ -6,7 +6,7 @@ This document provides instructions for deploying the ElasticOn Risk Agent Demo 
 
 1. **Azure Developer CLI (azd)**: Install from https://aka.ms/azd-install
 2. **Azure CLI**: Install from https://docs.microsoft.com/en-us/cli/azure/install-azure-cli
-3. **.NET 9 SDK**: Required for building all projects
+3. **.NET 10 SDK**: Required for building all projects
 4. **Azure Subscription**: With appropriate permissions to create resources
 5. **Elasticsearch Cluster**: For document indexing and search
 6. **Azure AI Foundry Project**: For agent and AI services (optional, for chat functionality)

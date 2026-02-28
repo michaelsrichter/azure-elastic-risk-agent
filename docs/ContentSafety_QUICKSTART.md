@@ -5,7 +5,7 @@ Get started with Azure AI Content Safety Prompt Shield in 5 minutes!
 ## Prerequisites
 
 - Azure subscription
-- .NET 9 SDK
+- .NET 10 SDK
 - Visual Studio 2022 or VS Code
 
 ## Step 1: Create Azure Content Safety Resource (2 minutes)

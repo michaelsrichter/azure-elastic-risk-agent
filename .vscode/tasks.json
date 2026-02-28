@@ -68,6 +68,85 @@
             "command": "host start",
             "isBackground": true,
             "label": "func: host start"
+        },
+        // ── Local Dev: Azure Functions ──────────────────────────────
+        {
+            "label": "⚡ Functions API",
+            "type": "func",
+            "dependsOn": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Functions"
+            },
+            "command": "host start",
+            "isBackground": true,
+            "problemMatcher": "$func-dotnet-watch",
+            "presentation": {
+                "label": "⚡ Functions API",
+                "group": "dev",
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "icon": {
+                "id": "zap",
+                "color": "terminal.ansiYellow"
+            }
+        },
+        // ── Local Dev: Blazor Web App ───────────────────────────────
+        {
+            "label": "🌐 Blazor Web",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "watch",
+                "run",
+                "--project",
+                "${workspaceFolder}/src/ElasticOn.RiskAgent.Demo.Web/ElasticOn.RiskAgent.Demo.Web.csproj"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^dotnet watch",
+                    "endsPattern": "Content root path:"
+                }
+            },
+            "presentation": {
+                "label": "🌐 Blazor Web",
+                "group": "dev",
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true
+            },
+            "icon": {
+                "id": "globe",
+                "color": "terminal.ansiCyan"
+            }
+        },
+        // ── Compound: Run Both ──────────────────────────────────────
+        {
+            "label": "🚀 Run All (Functions + Blazor)",
+            "dependsOn": [
+                "⚡ Functions API",
+                "🌐 Blazor Web"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": [],
+            "presentation": {
+                "label": "🚀 Run All",
+                "reveal": "always"
+            },
+            "icon": {
+                "id": "rocket",
+                "color": "terminal.ansiGreen"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }

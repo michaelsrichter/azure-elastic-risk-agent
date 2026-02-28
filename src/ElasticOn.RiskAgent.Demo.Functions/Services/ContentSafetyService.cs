@@ -2,6 +2,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Azure.Core;
+using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -15,9 +17,10 @@ public class ContentSafetyService : IContentSafetyService
     private readonly HttpClient _httpClient;
     private readonly ILogger<ContentSafetyService> _logger;
     private readonly string _endpoint;
-    private readonly string _subscriptionKey;
+    private readonly TokenCredential _credential;
     private const int MaxPromptLength = 1000;
     private const string ApiVersion = "2024-09-01";
+    private static readonly string[] CognitiveServicesScope = ["https://cognitiveservices.azure.com/.default"];
 
     /// <summary>
     /// Gets the current jailbreak detection mode
@@ -27,10 +30,12 @@ public class ContentSafetyService : IContentSafetyService
     public ContentSafetyService(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
+        TokenCredential credential,
         ILogger<ContentSafetyService> logger)
     {
         _httpClient = httpClientFactory.CreateClient("ContentSafetyClient");
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _credential = credential ?? throw new ArgumentNullException(nameof(credential));
 
         // Read detection mode configuration
         var modeString = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_JAILBREAK_DETECTION_MODE")
@@ -46,15 +51,12 @@ public class ContentSafetyService : IContentSafetyService
         DetectionMode = mode;
 
         // Always read Content Safety configuration since detection mode can be overridden per request
-        _endpoint = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_ENDPOINT")
+        _endpoint = (Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_ENDPOINT")
             ?? configuration["AIServicesContentSafetyEndpoint"]
-            ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_ENDPOINT is not set.");
+            ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_ENDPOINT is not set."))
+            .TrimEnd('/');
 
-        _subscriptionKey = Environment.GetEnvironmentVariable("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY")
-            ?? configuration["AIServicesContentSafetySubscriptionKey"]
-            ?? throw new InvalidOperationException("AZURE_CONTENT_SAFETY_SUBSCRIPTION_KEY is not set.");
-
-        _logger.LogInformation("ContentSafetyService initialized with endpoint: {Endpoint}, jailbreak detection mode: {Mode}", 
+        _logger.LogInformation("ContentSafetyService initialized with endpoint: {Endpoint}, jailbreak detection mode: {Mode} (using Managed Identity)", 
             _endpoint, DetectionMode);
     }
 
@@ -145,10 +147,17 @@ public class ContentSafetyService : IContentSafetyService
             var request = new ShieldPromptRequest(userPrompt, documents);
             var payload = JsonSerializer.Serialize(request, JsonSerializerOptions.Default);
 
-            var url = $"{_endpoint}/contentsafety/text:shieldPrompt?api-version={ApiVersion}";
+            // Ensure /contentsafety is in the path (Bicep endpoint may not include it)
+            var baseUrl = _endpoint.EndsWith("/contentsafety", StringComparison.OrdinalIgnoreCase)
+                ? _endpoint : $"{_endpoint}/contentsafety";
+            var url = $"{baseUrl}/text:shieldPrompt?api-version={ApiVersion}";
+
+            // Acquire a bearer token via Managed Identity
+            var tokenRequestContext = new TokenRequestContext(CognitiveServicesScope);
+            var accessToken = await _credential.GetTokenAsync(tokenRequestContext, cancellationToken);
 
             using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
-            httpRequest.Headers.Add("Ocp-Apim-Subscription-Key", _subscriptionKey);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken.Token);
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
             _logger.LogDebug("Sending jailbreak detection request for chunk (length: {Length})", userPrompt.Length);

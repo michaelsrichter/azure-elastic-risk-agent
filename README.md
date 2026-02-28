@@ -1,6 +1,6 @@
 # ElasticOn Risk Agent Demo
 
-ElasticOn Risk Agent Demo is a comprehensive .NET 9 solution that demonstrates AI-powered risk assessment workflows using Azure AI, Elasticsearch, and Microsoft 365 integration. The solution provides PDF document processing, intelligent chat capabilities, and Teams bot integration for risk analysis.
+ElasticOn Risk Agent Demo is a comprehensive .NET 10 solution that demonstrates AI-powered risk assessment workflows using Azure AI, Elasticsearch, and Microsoft 365 integration. The solution provides PDF document processing, intelligent chat capabilities, and Teams bot integration for risk analysis.
 
 ## Solution Overview
 
@@ -366,7 +366,7 @@ The solution uses a microservices architecture with the following components:
 ```
 
 ### Key Technologies
-- **.NET 9** - Modern C# for all components
+- **.NET 10** - Modern C# for all components
 - **Azure Functions** - Serverless compute with Flex Consumption plan
 - **Azure AI Foundry** - Agent framework with GPT-4 models
 - **Elasticsearch** - Document indexing and semantic search

@@ -8,9 +8,6 @@
     "location": {
       "value": "${AZURE_LOCATION}"
     },
-    "principalId": {
-      "value": "${AZURE_PRINCIPAL_ID}"
-    },
     "agentId": {
       "value": "${AI_AGENT_ID=}"
     },
@@ -35,14 +32,11 @@
     "elasticApiKey": {
       "value": "${ELASTIC_API_KEY}"
     },
-    "contentSafetyEndpoint": {
-      "value": "${CONTENT_SAFETY_ENDPOINT=}"
-    },
-    "contentSafetySubscriptionKey": {
-      "value": "${CONTENT_SAFETY_SUBSCRIPTION_KEY=}"
-    },
     "contentSafetyJailbreakDetectionMode": {
       "value": "${CONTENT_SAFETY_JAILBREAK_DETECTION_MODE=Disabled}"
+    },
+    "customDomain": {
+      "value": "${CUSTOM_DOMAIN=}"
     },
     "skipRoleAssignments": {
       "value": "${SKIP_ROLE_ASSIGNMENTS=false}"

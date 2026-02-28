@@ -1,3 +1,5 @@
+using Azure.Core;
+using Azure.Identity;
 using ElasticOn.RiskAgent.Demo.M365;
 using ElasticOn.RiskAgent.Demo.M365.Bot;
 using ElasticOn.RiskAgent.Demo.M365.Services;
@@ -28,6 +30,9 @@ builder.AddAgentApplicationOptions();
 
 // Register Azure AI Agent Service
 builder.Services.AddSingleton<IAzureAIAgentService, AzureAIAgentService>();
+
+// Register DefaultAzureCredential for Managed Identity auth (used by Content Safety and other services)
+builder.Services.AddSingleton<TokenCredential>(new DefaultAzureCredential());
 
 // Register Content Safety Service
 builder.Services.AddSingleton<IContentSafetyService, ContentSafetyService>();
