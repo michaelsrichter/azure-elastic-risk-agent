@@ -151,13 +151,29 @@ public class ChatFunction
 
             #region Agent Management
 
-            // Get or create agent
+            // Get or create agent — use dynamic agent if agent config is provided
             var agentId = _chatStateService.GetAgentId(conversationId);
             if (string.IsNullOrEmpty(agentId))
             {
-                agentId = await _azureAIAgentService.GetOrCreateAgentAsync();
+                if (!string.IsNullOrWhiteSpace(request.AgentName))
+                {
+                    // Internal page: create or reuse a dynamic agent with custom config
+                    var tools = (request.AgentTools ?? "")
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim())
+                        .ToList();
+                    var instructions = request.AgentInstructions ?? "";
+                    agentId = await _azureAIAgentService.GetOrCreateDynamicAgentAsync(
+                        request.AgentName.Trim(), instructions, tools);
+                    _logger.LogInformation("Using dynamic agent {AgentId} ({AgentName}) for conversation {ConversationId}",
+                        agentId, request.AgentName, conversationId);
+                }
+                else
+                {
+                    agentId = await _azureAIAgentService.GetOrCreateAgentAsync();
+                    _logger.LogInformation("Created new agent {AgentId} for conversation {ConversationId}", agentId, conversationId);
+                }
                 _chatStateService.SetAgentId(conversationId, agentId);
-                _logger.LogInformation("Created new agent {AgentId} for conversation {ConversationId}", agentId, conversationId);
             }
             else
             {
@@ -192,10 +208,13 @@ public class ChatFunction
             #region Create Message and Run Agent
 
             // Add user message to thread
+            var messageToSend = userMessage;
+
+            // Add user message to thread
             var messageResponse = await _client.Messages.CreateMessageAsync(
                 threadId,
                 MessageRole.User,
-                userMessage);
+                messageToSend);
             var message = messageResponse.Value;
 
             _logger.LogInformation("Added user message to thread {ThreadId}", threadId);

@@ -1,0 +1,57 @@
+@inject LocalizationService L
+
+<div class="language-picker">
+    <button class="language-picker-toggle" @onclick="ToggleDropdown" @onclick:stopPropagation="true">
+        <span class="lang-flag">@GetFlag(L.CurrentLocale)</span>
+        <span class="lang-code">@GetShortCode(L.CurrentLocale)</span>
+        <span class="lang-arrow">▾</span>
+    </button>
+
+    @if (isOpen)
+    {
+        <div class="language-picker-dropdown">
+            @foreach (var (code, label) in LocalizationService.SupportedLocales)
+            {
+                <button class="language-option @(code == L.CurrentLocale ? "active" : "")"
+                        @onclick="() => SelectLanguage(code)">
+                    <span class="lang-flag">@GetFlag(code)</span>
+                    <span>@label</span>
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool isOpen = false;
+
+    protected override void OnInitialized()
+    {
+        L.OnLanguageChanged += StateHasChanged;
+    }
+
+    private void ToggleDropdown() => isOpen = !isOpen;
+
+    private async Task SelectLanguage(string code)
+    {
+        isOpen = false;
+        await L.SetLocaleAsync(code);
+    }
+
+    private static string GetFlag(string locale) => locale switch
+    {
+        "ja-JP" => "🇯🇵",
+        _ => "🇺🇸"
+    };
+
+    private static string GetShortCode(string locale) => locale switch
+    {
+        "ja-JP" => "JP",
+        _ => "EN"
+    };
+
+    public void Dispose()
+    {
+        L.OnLanguageChanged -= StateHasChanged;
+    }
+}

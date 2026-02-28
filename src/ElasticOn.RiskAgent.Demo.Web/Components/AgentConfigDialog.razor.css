@@ -1,0 +1,145 @@
+/* Agent Configuration Dialog */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: overlayFadeIn 0.2s ease;
+}
+
+@keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.dialog-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 560px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    animation: panelSlideIn 0.2s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+@keyframes panelSlideIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dialog-panel h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: #1a1a2e;
+}
+
+.dialog-description {
+    margin: 0 0 1.25rem 0;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+.dialog-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 0.4rem;
+    margin-top: 1rem;
+}
+
+.dialog-label:first-of-type {
+    margin-top: 0;
+}
+
+.dialog-input {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.dialog-input:focus {
+    border-color: #c0392b;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.dialog-textarea {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+.dialog-textarea:focus {
+    border-color: #c0392b;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.15);
+}
+
+.dialog-hint {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.75rem;
+    color: #888;
+    font-style: italic;
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.dialog-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.dialog-btn.cancel {
+    background: #f0f0f0;
+    color: #555;
+}
+
+.dialog-btn.cancel:hover {
+    background: #e0e0e0;
+}
+
+.dialog-btn.save {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+    color: white;
+}
+
+.dialog-btn.save:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.dialog-btn.save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

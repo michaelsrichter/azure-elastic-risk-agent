@@ -1,0 +1,107 @@
+@inject LocalizationService L
+@inject IJSRuntime JS
+
+@if (IsVisible)
+{
+    <div class="dialog-overlay" @onclick="Cancel">
+        <div class="dialog-panel" @onclick:stopPropagation="true">
+            <h3>@L["AgentConfigTitle"]</h3>
+            <p class="dialog-description">@L["AgentConfigDescription"]</p>
+
+            <label class="dialog-label" for="agentNameInput">@L["AgentConfigNameLabel"]</label>
+            <input id="agentNameInput"
+                   type="text"
+                   class="dialog-input"
+                   placeholder="@L["AgentConfigNamePlaceholder"]"
+                   @bind="agentNameInput"
+                   @bind:event="oninput" />
+
+            <label class="dialog-label" for="agentInstructionsInput">@L["AgentConfigInstructionsLabel"]</label>
+            <textarea id="agentInstructionsInput"
+                      class="dialog-textarea"
+                      rows="4"
+                      placeholder="@L["AgentConfigInstructionsPlaceholder"]"
+                      @bind="agentInstructionsInput"
+                      @bind:event="oninput"></textarea>
+
+            <label class="dialog-label" for="agentToolsInput">@L["AgentConfigToolsLabel"]</label>
+            <input id="agentToolsInput"
+                   type="text"
+                   class="dialog-input"
+                   placeholder="@L["AgentConfigToolsPlaceholder"]"
+                   @bind="agentToolsInput"
+                   @bind:event="oninput" />
+            <p class="dialog-hint">@L["AgentConfigToolsHint"]</p>
+
+            <div class="dialog-actions">
+                <button class="dialog-btn cancel" @onclick="Cancel">@L["AgentConfigCancel"]</button>
+                <button class="dialog-btn save"
+                        @onclick="Save"
+                        disabled="@(!IsValid)">@L["AgentConfigSave"]</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<AgentConfig> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public AgentConfig? CurrentValue { get; set; }
+
+    private string agentNameInput = string.Empty;
+    private string agentInstructionsInput = string.Empty;
+    private string agentToolsInput = string.Empty;
+
+    private bool IsValid =>
+        !string.IsNullOrWhiteSpace(agentNameInput) &&
+        !string.IsNullOrWhiteSpace(agentInstructionsInput) &&
+        !string.IsNullOrWhiteSpace(agentToolsInput);
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible && CurrentValue != null)
+        {
+            agentNameInput = CurrentValue.AgentName;
+            agentInstructionsInput = CurrentValue.AgentInstructions;
+            agentToolsInput = CurrentValue.AgentTools;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (!IsValid) return;
+
+        var config = new AgentConfig
+        {
+            AgentName = agentNameInput.Trim(),
+            AgentInstructions = agentInstructionsInput.Trim(),
+            AgentTools = agentToolsInput.Trim()
+        };
+
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "agentName", config.AgentName);
+            await JS.InvokeVoidAsync("localStorage.setItem", "agentInstructions", config.AgentInstructions);
+            await JS.InvokeVoidAsync("localStorage.setItem", "agentTools", config.AgentTools);
+        }
+        catch { }
+
+        await OnSave.InvokeAsync(config);
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Holds the three agent configuration values.
+    /// </summary>
+    public class AgentConfig
+    {
+        public string AgentName { get; set; } = string.Empty;
+        public string AgentInstructions { get; set; } = string.Empty;
+        public string AgentTools { get; set; } = string.Empty;
+    }
+}

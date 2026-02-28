@@ -1,0 +1,93 @@
+@page "/internal"
+@inject LocalizationService L
+@inject AgentConfigDialogService AgentConfigDialog
+@inject IJSRuntime JS
+@implements IDisposable
+
+<PageTitle>@L["AppFullNameInternal"]</PageTitle>
+
+<ChatComponent IsInternal="true"
+               AgentName="@agentConfig?.AgentName"
+               AgentInstructions="@agentConfig?.AgentInstructions"
+               AgentTools="@agentConfig?.AgentTools" />
+
+<AgentConfigDialog IsVisible="showConfigDialog"
+                   CurrentValue="@agentConfig"
+                   OnSave="OnAgentConfigSaved"
+                   OnCancel="OnConfigDialogCancel" />
+
+@code {
+    private AgentConfigDialog.AgentConfig? agentConfig;
+    private bool showConfigDialog = false;
+
+    private const string DefaultAgentName = "internal-docs-agent";
+    private const string DefaultAgentInstructions = "you are an agent that retrieves information about a company's internal documents. Only use the tools available to you to find information and respond to queries. Do not make up any information on your own.";
+    private const string DefaultAgentTools = "azure_elastic_internaldocuments_agent_docs_list_1,azure_elastic_internaldocuments_agent_search_docs_1";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load saved agent config from localStorage
+        try
+        {
+            var name = await JS.InvokeAsync<string?>("localStorage.getItem", "agentName");
+            var instructions = await JS.InvokeAsync<string?>("localStorage.getItem", "agentInstructions");
+            var tools = await JS.InvokeAsync<string?>("localStorage.getItem", "agentTools");
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                agentConfig = new AgentConfigDialog.AgentConfig
+                {
+                    AgentName = name,
+                    AgentInstructions = instructions ?? DefaultAgentInstructions,
+                    AgentTools = tools ?? DefaultAgentTools
+                };
+            }
+        }
+        catch { }
+
+        // If no agent config is set, show the dialog with defaults
+        if (agentConfig == null)
+        {
+            agentConfig = new AgentConfigDialog.AgentConfig
+            {
+                AgentName = DefaultAgentName,
+                AgentInstructions = DefaultAgentInstructions,
+                AgentTools = DefaultAgentTools
+            };
+            showConfigDialog = true;
+        }
+
+        L.OnLanguageChanged += OnLanguageChanged;
+        AgentConfigDialog.OnOpenRequested += OnDialogOpenRequested;
+    }
+
+    private void OnDialogOpenRequested()
+    {
+        showConfigDialog = true;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAgentConfigSaved(AgentConfigDialog.AgentConfig config)
+    {
+        agentConfig = config;
+        showConfigDialog = false;
+        StateHasChanged();
+    }
+
+    private void OnConfigDialogCancel()
+    {
+        showConfigDialog = false;
+        StateHasChanged();
+    }
+
+    private void OnLanguageChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        L.OnLanguageChanged -= OnLanguageChanged;
+        AgentConfigDialog.OnOpenRequested -= OnDialogOpenRequested;
+    }
+}

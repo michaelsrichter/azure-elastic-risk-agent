@@ -454,6 +454,21 @@ a, .btn-link {
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
+/* Index required notice (Internal page) */
+.index-required-notice {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    color: #856404;
+    font-size: 0.875rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
@@ -1137,4 +1152,146 @@ code {
     .price {
         font-size: 3rem;
     }
+}
+
+/* ============================================================
+   Internal Page Dark Red Theme Overrides
+   Applied via .internal-theme class on the page container
+   Color palette:
+     Primary gradient: #8b2252 → #c0392b (dark rose → crimson)
+     Accent:           #c0392b
+     Accent hover:     #a93226
+     Shadow base:      rgba(192, 57, 43, ...)
+   ============================================================ */
+
+/* New Chat Button */
+.internal-theme .new-chat-button {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+    box-shadow: 0 2px 4px rgba(192, 57, 43, 0.2);
+}
+
+.internal-theme .new-chat-button:hover {
+    box-shadow: 0 4px 8px rgba(192, 57, 43, 0.3);
+}
+
+/* Welcome Section */
+.internal-theme .welcome-message h2 {
+    color: #c0392b;
+}
+
+/* User Message Bubble */
+.internal-theme .message.user .message-content {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+}
+
+/* Assistant Message Links */
+.internal-theme .message.assistant .message-content a {
+    color: #c0392b;
+}
+
+.internal-theme .message.assistant .message-content a:hover {
+    color: #8b2252;
+}
+
+/* Blockquote Accent */
+.internal-theme .message.assistant .message-content blockquote {
+    border-left: 3px solid #c0392b;
+}
+
+/* Thinking Indicator Dots */
+.internal-theme .thinking-indicator .dot {
+    background: #c0392b;
+}
+
+/* Chat Input Focus */
+.internal-theme .chat-input:focus {
+    border-color: #c0392b;
+}
+
+/* Send Button */
+.internal-theme .send-button {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+}
+
+.internal-theme .send-button:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4);
+}
+
+/* Prompt / Suggestion Buttons */
+.internal-theme .prompt-button {
+    color: #c0392b;
+}
+
+.internal-theme .prompt-button:hover {
+    background: #c0392b;
+    color: white;
+    border-color: #c0392b;
+}
+
+/* Footer */
+.internal-theme .site-footer {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+}
+
+/* Info Pages (About / FAQ / Pricing) */
+.internal-theme .info-container h1 {
+    color: #c0392b;
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.internal-theme .info-section a {
+    color: #c0392b;
+}
+
+.internal-theme .info-section a:hover {
+    color: #8b2252;
+}
+
+/* CTA Buttons */
+.internal-theme .cta-button {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+}
+
+.internal-theme .cta-button:hover {
+    box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4);
+}
+
+.internal-theme .cta-button.secondary {
+    color: #c0392b;
+    border-color: #c0392b;
+}
+
+.internal-theme .cta-button.secondary:hover {
+    color: #8b2252;
+    border-color: #8b2252;
+}
+
+/* Pricing Card */
+.internal-theme .pricing-card {
+    background: linear-gradient(135deg, #8b2252 0%, #c0392b 100%);
+}
+
+.internal-theme .pricing-card.featured {
+    box-shadow: 0 8px 24px rgba(192, 57, 43, 0.3);
+}
+
+/* FAQ Items */
+.internal-theme .faq-item h2 {
+    color: #c0392b;
+}
+
+.internal-theme .faq-item code {
+    color: #c0392b;
+}
+
+/* Index / Agent Required Notice */
+.internal-theme .index-required-notice {
+    border-color: #c0392b;
+}
+
+.internal-theme .index-required-notice span {
+    color: #c0392b;
 }

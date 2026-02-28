@@ -155,6 +155,81 @@ public class AzureAIAgentService : IAzureAIAgentService
     public string GetElasticApiKey() => _elasticApiKey;
 
     /// <summary>
+    /// Gets or creates a dynamic agent by name with custom instructions and MCP tools.
+    /// Lists existing agents and matches by name. If found, updates it if instructions or tools differ.
+    /// If not found, creates a new agent.
+    /// </summary>
+    public async Task<string> GetOrCreateDynamicAgentAsync(string agentName, string agentInstructions, IList<string> mcpTools)
+    {
+        _logger.LogInformation("Looking for existing dynamic agent with name: {AgentName}", agentName);
+
+        // Search for an existing agent with this name
+        try
+        {
+            var agents = _client.Administration.GetAgentsAsync();
+            await foreach (var agent in agents)
+            {
+                if (string.Equals(agent.Name, agentName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Found existing agent {AgentId} with name {AgentName}", agent.Id, agentName);
+
+                    // Check if instructions or tools have changed
+                    var existingToolNames = new List<string>();
+                    foreach (var tool in agent.Tools)
+                    {
+                        if (tool is MCPToolDefinition mcpDef)
+                        {
+                            foreach (var t in mcpDef.AllowedTools)
+                                existingToolNames.Add(t);
+                        }
+                    }
+
+                    var toolsMatch = existingToolNames.Count == mcpTools.Count
+                        && existingToolNames.OrderBy(t => t).SequenceEqual(mcpTools.OrderBy(t => t));
+                    var instructionsMatch = string.Equals(agent.Instructions, agentInstructions, StringComparison.Ordinal);
+
+                    if (instructionsMatch && toolsMatch)
+                    {
+                        _logger.LogInformation("Agent {AgentId} instructions and tools are up to date", agent.Id);
+                        return agent.Id;
+                    }
+
+                    // Update the agent with new instructions and/or tools
+                    _logger.LogInformation("Updating agent {AgentId} with new instructions/tools", agent.Id);
+                    var updatedMcpTool = CreateMcpToolDefinition(mcpTools);
+                    await _client.Administration.UpdateAgentAsync(
+                        agent.Id,
+                        model: _model,
+                        name: agentName,
+                        instructions: agentInstructions,
+                        tools: [updatedMcpTool]);
+                    return agent.Id;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error searching for existing agent {AgentName}, will create new", agentName);
+        }
+
+        // Create new agent
+        _logger.LogInformation("Creating new dynamic agent with name: {AgentName}", agentName);
+        var mcpToolDef = CreateMcpToolDefinition(mcpTools);
+        var toolResources = CreateMcpToolResources();
+
+        var agentMetadata = await _client.Administration.CreateAgentAsync(
+            model: _model,
+            name: agentName,
+            instructions: agentInstructions,
+            tools: [mcpToolDef],
+            toolResources: toolResources);
+
+        var newAgentId = agentMetadata.Value.Id;
+        _logger.LogInformation("Successfully created dynamic agent with ID: {AgentId}", newAgentId);
+        return newAgentId;
+    }
+
+    /// <summary>
     /// Creates MCP tool resources with authentication headers
     /// </summary>
     /// <returns>Configured ToolResources</returns>
@@ -178,11 +253,19 @@ public class AzureAIAgentService : IAzureAIAgentService
     /// </summary>
     private MCPToolDefinition CreateMcpToolDefinition()
     {
+        return CreateMcpToolDefinition(_mcpAllowedTools);
+    }
+
+    /// <summary>
+    /// Creates MCP tool definition with the specified allowed tools
+    /// </summary>
+    private MCPToolDefinition CreateMcpToolDefinition(IList<string> allowedTools)
+    {
         var mcpTool = new MCPToolDefinition(
             serverLabel: _mcpServerLabel,
             serverUrl: _mcpServerUrl);
 
-        foreach (var tool in _mcpAllowedTools)
+        foreach (var tool in allowedTools)
         {
             mcpTool.AllowedTools.Add(tool);
         }
