@@ -377,9 +377,9 @@ The solution uses a microservices architecture with the following components:
 ## Prerequisites
 
 ### Development Environment
-- **.NET SDK 9** or later
+- **.NET 10 SDK** (10.0.x) - required; a `global.json` in the repo root pins the SDK version automatically
 - **Azure Functions Core Tools v4** for running functions locally
-- **Visual Studio 2022** or **VS Code** with C# extension
+- **Visual Studio 2022** (17.13+) or **VS Code** with C# extension
 - **Node.js** (for some development tools)
 
 ### Azure Services (for deployment)
@@ -397,6 +397,18 @@ Restore dependencies and build all projects:
 ```bash
 dotnet build ElasticOn.RiskAgent.Demo.sln
 ```
+
+> **Upgrading from a previous version of this repo (.NET 8 / .NET 9)?**
+> The solution now targets **.NET 10**. If you pulled new changes over an existing clone you may see
+> `NETSDK1005: Assets file doesn't have a target for 'net10.0'` errors. This is caused by stale
+> `obj/` directories from the old SDK. Fix it with a one-time clean:
+>
+> ```bash
+> dotnet clean ElasticOn.RiskAgent.Demo.sln
+> dotnet build ElasticOn.RiskAgent.Demo.sln
+> ```
+>
+> If the error persists, delete the `obj/` folders manually and run `dotnet build` again.
 
 ### Run the Azure Functions (Backend)
 
