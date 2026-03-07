@@ -333,69 +333,78 @@ public class ChatFunction
 
             // Analyze MCP tool outputs if any were collected (and detection is not disabled)
             JailbreakDetectionResult? toolOutputDetectionResult = null;
-            if (mcpToolOutputs.Count > 0 && detectionMode != JailbreakDetectionMode.Disabled)
+            if (mcpToolOutputs.Count > 0)
             {
-                // Extract text content from JSON outputs to save characters and focus on actual content
-                var extractedTexts = new List<string>();
-                int originalTotalLength = 0;
-                
-                foreach (var output in mcpToolOutputs)
+                // Log total raw character size from all MCP tool call responses
+                int totalRawCharacters = mcpToolOutputs.Sum(o => o.Length);
+                _logger.LogInformation(
+                    "MCP tool call responses: {ToolCallCount} calls, {TotalRawChars} total raw characters in conversation {ConversationId}",
+                    mcpToolOutputs.Count, totalRawCharacters, conversationId);
+
+                if (detectionMode != JailbreakDetectionMode.Disabled)
                 {
-                    originalTotalLength += output.Length;
-                    var extractedText = ExtractTextFromJson(output);
-                    if (!string.IsNullOrWhiteSpace(extractedText))
+                    // Extract text content from JSON outputs to save characters and focus on actual content
+                    var extractedTexts = new List<string>();
+                    int originalTotalLength = 0;
+                    
+                    foreach (var output in mcpToolOutputs)
                     {
-                        extractedTexts.Add(extractedText);
-                    }
-                }
-                
-                // Combine all extracted text into a single document for analysis
-                var combinedOutput = string.Join("\n\n", extractedTexts);
-                
-                _logger.LogInformation("Analyzing MCP tool outputs (extracted {ExtractedLength} chars from {OriginalLength} original chars, {Count} tool calls) for jailbreak attempts in conversation {ConversationId} (Mode: {Mode})", 
-                    combinedOutput.Length, originalTotalLength, mcpToolOutputs.Count, conversationId, detectionMode);
-
-                toolOutputDetectionResult = await _contentSafetyService.DetectJailbreakAsync(
-                    combinedOutput, 
-                    cancellationToken);
-
-                if (toolOutputDetectionResult.IsJailbreakDetected)
-                {
-                    _logger.LogWarning("Jailbreak attempt detected in MCP tool outputs for conversation {ConversationId}. Mode: {Mode}", 
-                        conversationId, detectionMode);
-
-                    if (detectionMode == JailbreakDetectionMode.Enforce)
-                    {
-                        // Enforce mode: Return security alert message instead of blocking
-                        _logger.LogWarning("Returning security alert due to Enforce mode");
-                        var securityAlertMessage = $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\nOffending text:\n\"{toolOutputDetectionResult.OffendingText}\"";
-                        
-                        // Convert markdown to HTML
-                        var toolOutputPipeline = new MarkdownPipelineBuilder()
-                            .UseAdvancedExtensions()
-                            .Build();
-                        var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, toolOutputPipeline);
-                        
-                        var toolOutputResponse = req.CreateResponse(HttpStatusCode.OK);
-                        toolOutputResponse.Headers.Add("Content-Type", "application/json");
-                        
-                        var toolOutputResponseData = new SendMessageResponse
+                        originalTotalLength += output.Length;
+                        var extractedText = ExtractTextFromJson(output);
+                        if (!string.IsNullOrWhiteSpace(extractedText))
                         {
-                            Success = true,
-                            Message = securityAlertMessage,
-                            MessageHtml = securityAlertHtml,
-                            ThreadId = threadId
-                        };
-                        
-                        var toolOutputJson = JsonSerializer.Serialize(toolOutputResponseData, GetJsonOptions());
-                        await toolOutputResponse.WriteStringAsync(toolOutputJson, cancellationToken);
-                        return toolOutputResponse;
+                            extractedTexts.Add(extractedText);
+                        }
                     }
-                    // Audit mode: Continue processing but will note the detection in the response
-                }
-                else
-                {
-                    _logger.LogDebug("No jailbreak detected in MCP tool outputs for conversation {ConversationId}", conversationId);
+                    
+                    // Combine all extracted text into a single document for analysis
+                    var combinedOutput = string.Join("\n\n", extractedTexts);
+                    
+                    _logger.LogInformation("Analyzing MCP tool outputs (extracted {ExtractedLength} chars from {OriginalLength} original chars, {Count} tool calls) for jailbreak attempts in conversation {ConversationId} (Mode: {Mode})", 
+                        combinedOutput.Length, originalTotalLength, mcpToolOutputs.Count, conversationId, detectionMode);
+
+                    toolOutputDetectionResult = await _contentSafetyService.DetectJailbreakAsync(
+                        combinedOutput, 
+                        cancellationToken);
+
+                    if (toolOutputDetectionResult.IsJailbreakDetected)
+                    {
+                        _logger.LogWarning("Jailbreak attempt detected in MCP tool outputs for conversation {ConversationId}. Mode: {Mode}", 
+                            conversationId, detectionMode);
+
+                        if (detectionMode == JailbreakDetectionMode.Enforce)
+                        {
+                            // Enforce mode: Return security alert message instead of blocking
+                            _logger.LogWarning("Returning security alert due to Enforce mode");
+                            var securityAlertMessage = $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\nOffending text:\n\"{toolOutputDetectionResult.OffendingText}\"";
+                            
+                            // Convert markdown to HTML
+                            var toolOutputPipeline = new MarkdownPipelineBuilder()
+                                .UseAdvancedExtensions()
+                                .Build();
+                            var securityAlertHtml = Markdown.ToHtml(securityAlertMessage, toolOutputPipeline);
+                            
+                            var toolOutputResponse = req.CreateResponse(HttpStatusCode.OK);
+                            toolOutputResponse.Headers.Add("Content-Type", "application/json");
+                            
+                            var toolOutputResponseData = new SendMessageResponse
+                            {
+                                Success = true,
+                                Message = securityAlertMessage,
+                                MessageHtml = securityAlertHtml,
+                                ThreadId = threadId
+                            };
+                            
+                            var toolOutputJson = JsonSerializer.Serialize(toolOutputResponseData, GetJsonOptions());
+                            await toolOutputResponse.WriteStringAsync(toolOutputJson, cancellationToken);
+                            return toolOutputResponse;
+                        }
+                        // Audit mode: Continue processing but will note the detection in the response
+                    }
+                    else
+                    {
+                        _logger.LogDebug("No jailbreak detected in MCP tool outputs for conversation {ConversationId}", conversationId);
+                    }
                 }
             }
 
