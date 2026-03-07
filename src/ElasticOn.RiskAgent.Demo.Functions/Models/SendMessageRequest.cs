@@ -27,6 +27,11 @@ public class SendMessageRequest
     public string? ContentSafetyMode { get; set; }
     
     /// <summary>
+    /// Optional agent ID for the Internal page. If specified, this agent will be used directly.
+    /// </summary>
+    public string? AgentId { get; set; }
+    
+    /// <summary>
     /// Optional agent name for the Internal page. If specified, a dynamic agent will be created or reused.
     /// </summary>
     public string? AgentName { get; set; }

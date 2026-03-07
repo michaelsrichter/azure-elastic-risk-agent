@@ -8,6 +8,7 @@
 
 <ChatComponent IsInternal="true"
                AgentName="@agentConfig?.AgentName"
+               AgentId="@agentConfig?.AgentId"
                AgentInstructions="@agentConfig?.AgentInstructions"
                AgentTools="@agentConfig?.AgentTools" />
 
@@ -30,6 +31,7 @@
         try
         {
             var name = await JS.InvokeAsync<string?>("localStorage.getItem", "agentName");
+            var agentId = await JS.InvokeAsync<string?>("localStorage.getItem", "agentId");
             var instructions = await JS.InvokeAsync<string?>("localStorage.getItem", "agentInstructions");
             var tools = await JS.InvokeAsync<string?>("localStorage.getItem", "agentTools");
 
@@ -38,6 +40,7 @@
                 agentConfig = new AgentConfigDialog.AgentConfig
                 {
                     AgentName = name,
+                    AgentId = agentId ?? "",
                     AgentInstructions = instructions ?? DefaultAgentInstructions,
                     AgentTools = tools ?? DefaultAgentTools
                 };

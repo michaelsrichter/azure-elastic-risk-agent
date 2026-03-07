@@ -48,6 +48,30 @@
                         }
                     </div>
                     <div class="message-time">@message.Timestamp.ToLocalTime().ToString("h:mm tt")</div>
+                    @if (message.Role == "assistant" && !message.IsThinking && message.AgentId != null)
+                    {
+                        <div class="message-metadata">
+                            <span title="Agent">🤖 @message.AgentName</span>
+                            <span title="Agent ID">@message.AgentId</span>
+                            <span title="Model">@message.Model</span>
+                            @if (message.AgentCreatedAt != null)
+                            {
+                                <span title="Agent Created">Created @FormatCreatedAt(message.AgentCreatedAt)</span>
+                            }
+                            @if (message.ElapsedMs.HasValue)
+                            {
+                                <span title="Elapsed Time">⏱ @FormatElapsed(message.ElapsedMs.Value)</span>
+                            }
+                            @if (message.RequestLength.HasValue)
+                            {
+                                <span title="Request Length">📝 @message.RequestLength chars</span>
+                            }
+                            @if (message.PromptTokens.HasValue || message.CompletionTokens.HasValue)
+                            {
+                                <span title="Tokens (in/out/total)">🔢 @message.PromptTokens/@message.CompletionTokens/@message.TotalTokens tokens</span>
+                            }
+                        </div>
+                    }
                 </div>
             }
         }
@@ -114,6 +138,9 @@
 
     /// <summary>Agent name for the Internal page dynamic agent.</summary>
     [Parameter] public string? AgentName { get; set; }
+
+    /// <summary>Agent ID for the Internal page (optional, uses existing agent directly).</summary>
+    [Parameter] public string? AgentId { get; set; }
 
     /// <summary>Agent instructions for the Internal page dynamic agent.</summary>
     [Parameter] public string? AgentInstructions { get; set; }
@@ -212,6 +239,7 @@
                 ConversationId = ChatState.ConversationId,
                 ThreadId = ChatState.ThreadId,
                 ContentSafetyMode = selectedContentSafetyMode,
+                AgentId = AgentId,
                 AgentName = AgentName,
                 AgentInstructions = AgentInstructions,
                 AgentTools = AgentTools
@@ -235,7 +263,16 @@
                     {
                         Role = "assistant",
                         Content = result.MessageHtml,
-                        Timestamp = DateTime.UtcNow
+                        Timestamp = DateTime.UtcNow,
+                        AgentName = result.AgentName,
+                        AgentId = result.AgentId,
+                        AgentCreatedAt = result.AgentCreatedAt,
+                        Model = result.Model,
+                        ElapsedMs = result.ElapsedMs,
+                        RequestLength = result.RequestLength,
+                        PromptTokens = result.PromptTokens,
+                        CompletionTokens = result.CompletionTokens,
+                        TotalTokens = result.TotalTokens
                     });
                 }
                 else
@@ -281,5 +318,20 @@
     private async Task ScrollToBottom()
     {
         await Task.Delay(100);
+    }
+
+    private static string FormatElapsed(long ms)
+    {
+        if (ms < 1000) return $"{ms}ms";
+        var seconds = ms / 1000.0;
+        return seconds < 60 ? $"{seconds:F1}s" : $"{seconds / 60:F1}m";
+    }
+
+    private static string FormatCreatedAt(string? iso8601)
+    {
+        if (string.IsNullOrEmpty(iso8601)) return "";
+        if (DateTimeOffset.TryParse(iso8601, out var dt))
+            return dt.ToLocalTime().ToString("MMM d, yyyy h:mm tt");
+        return iso8601;
     }
 }

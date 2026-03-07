@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using Azure.AI.Agents.Persistent;
@@ -21,6 +22,8 @@ public class ChatFunction
     private readonly IContentSafetyService _contentSafetyService;
     private readonly IChatStateService _chatStateService;
     private readonly PersistentAgentsClient _client;
+
+    private const string DefaultAgentId = "asst_SERwGPe03RW2qNwP65NHg0Ik";
 
     public ChatFunction(
         ILogger<ChatFunction> logger,
@@ -151,11 +154,20 @@ public class ChatFunction
 
             #region Agent Management
 
-            // Get or create agent — use dynamic agent if agent config is provided
+            // Determine agent ID:
+            // - Main page (no AgentName): always use the hardcoded DefaultAgentId
+            // - Internal page with AgentId: use the provided ID directly
+            // - Internal page with AgentName only: create/reuse a dynamic agent
             var agentId = _chatStateService.GetAgentId(conversationId);
             if (string.IsNullOrEmpty(agentId))
             {
-                if (!string.IsNullOrWhiteSpace(request.AgentName))
+                if (!string.IsNullOrWhiteSpace(request.AgentId))
+                {
+                    // Internal page: use the explicitly provided agent ID
+                    agentId = request.AgentId.Trim();
+                    _logger.LogInformation("Using provided agent ID {AgentId} for conversation {ConversationId}", agentId, conversationId);
+                }
+                else if (!string.IsNullOrWhiteSpace(request.AgentName))
                 {
                     // Internal page: create or reuse a dynamic agent with custom config
                     var tools = (request.AgentTools ?? "")
@@ -170,8 +182,9 @@ public class ChatFunction
                 }
                 else
                 {
-                    agentId = await _azureAIAgentService.GetOrCreateAgentAsync();
-                    _logger.LogInformation("Created new agent {AgentId} for conversation {ConversationId}", agentId, conversationId);
+                    // Main page: always use the hardcoded default agent
+                    agentId = DefaultAgentId;
+                    _logger.LogInformation("Using default agent {AgentId} for conversation {ConversationId}", agentId, conversationId);
                 }
                 _chatStateService.SetAgentId(conversationId, agentId);
             }
@@ -207,6 +220,9 @@ public class ChatFunction
 
             #region Create Message and Run Agent
 
+            // Start timing the agent run
+            var runStopwatch = Stopwatch.StartNew();
+
             // Add user message to thread
             var messageToSend = userMessage;
 
@@ -219,9 +235,15 @@ public class ChatFunction
 
             _logger.LogInformation("Added user message to thread {ThreadId}", threadId);
 
-            // Get the persistent agent instance
+            // Get the persistent agent instance and capture metadata
             var agentResponse = await _client.Administration.GetAgentAsync(agentId);
             var persistentAgent = agentResponse.Value;
+            var agentName = persistentAgent.Name ?? "(unnamed)";
+            var agentCreatedAt = persistentAgent.CreatedAt;
+            var agentModel = persistentAgent.Model ?? "(unknown)";
+
+            _logger.LogInformation("Agent metadata - Name: {AgentName}, ID: {AgentId}, Model: {Model}, Created: {CreatedAt}",
+                agentName, agentId, agentModel, agentCreatedAt);
 
             // Create a run with MCP tool resources
             var toolResources = _azureAIAgentService.CreateMcpToolResources();
@@ -289,6 +311,17 @@ public class ChatFunction
                 _logger.LogError("Unexpected run status: {Status}", run.Status);
                 return await CreateErrorResponse(req, "An unexpected error occurred.", HttpStatusCode.InternalServerError);
             }
+
+            // Stop timing and capture token usage
+            runStopwatch.Stop();
+            var elapsedMs = runStopwatch.ElapsedMilliseconds;
+            var promptTokens = run.Usage?.PromptTokens;
+            var completionTokens = run.Usage?.CompletionTokens;
+            var totalTokens = run.Usage?.TotalTokens;
+
+            _logger.LogInformation(
+                "Run completed - Elapsed: {ElapsedMs}ms, Prompt tokens: {PromptTokens}, Completion tokens: {CompletionTokens}, Total tokens: {TotalTokens}, Model: {Model}",
+                elapsedMs, promptTokens, completionTokens, totalTokens, agentModel);
 
             #endregion
 
@@ -478,7 +511,16 @@ public class ChatFunction
                 Success = true,
                 Message = finalResponse,
                 MessageHtml = messageHtml,
-                ThreadId = threadId
+                ThreadId = threadId,
+                AgentName = agentName,
+                AgentId = agentId,
+                AgentCreatedAt = agentCreatedAt.ToString("o"),
+                Model = agentModel,
+                ElapsedMs = elapsedMs,
+                RequestLength = userMessage.Length,
+                PromptTokens = promptTokens,
+                CompletionTokens = completionTokens,
+                TotalTokens = totalTokens
             };
             
             var finalJson = JsonSerializer.Serialize(finalResponseData, GetJsonOptions());

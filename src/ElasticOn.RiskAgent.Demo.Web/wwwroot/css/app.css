@@ -260,6 +260,28 @@ a, .btn-link {
     padding: 0 0.5rem;
 }
 
+/* Agent metadata bar shown below assistant messages */
+.message-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.65rem;
+    color: #999;
+    margin-top: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    line-height: 1.4;
+}
+
+.message-metadata span {
+    white-space: nowrap;
+    opacity: 0.75;
+}
+
+.message-metadata span:hover {
+    opacity: 1;
+}
+
 /* Thinking Indicator */
 .thinking-indicator {
     display: flex;
