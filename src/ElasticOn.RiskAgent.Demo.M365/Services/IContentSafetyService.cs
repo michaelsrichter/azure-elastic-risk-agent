@@ -54,7 +54,7 @@ public interface IContentSafetyService
 
     /// <summary>
     /// Analyzes text for potential jailbreak attempts using Azure Content Safety Prompt Shield.
-    /// Text longer than 1000 characters is automatically split into chunks and analyzed separately.
+    /// Text longer than 9900 characters is automatically split into chunks and analyzed in parallel.
     /// </summary>
     /// <param name="text">The text to analyze (will be chunked internally if needed)</param>
     /// <param name="cancellationToken">Cancellation token</param>

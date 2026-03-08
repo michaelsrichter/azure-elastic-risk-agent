@@ -16,7 +16,7 @@ public class ContentSafetyService : IContentSafetyService
     private readonly ILogger<ContentSafetyService> _logger;
     private readonly string _endpoint;
     private readonly TokenCredential _credential;
-    private const int MaxPromptLength = 1000;
+    private const int MaxPromptLength = 9900;
     private const string ApiVersion = "2024-09-01";
     private static readonly string[] CognitiveServicesScope = ["https://cognitiveservices.azure.com/.default"];
 
@@ -68,7 +68,7 @@ public class ContentSafetyService : IContentSafetyService
 
     /// <summary>
     /// Analyzes text for potential jailbreak attempts using Azure Content Safety Prompt Shield.
-    /// Text longer than 1000 characters is automatically split into chunks and analyzed separately.
+    /// Text longer than 9900 characters is automatically split into chunks and analyzed in parallel.
     /// </summary>
     /// <param name="text">The text to analyze (will be chunked internally if needed)</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -91,22 +91,46 @@ public class ContentSafetyService : IContentSafetyService
         {
             // Split text into chunks if needed
             var textChunks = SplitTextIntoChunks(text, MaxPromptLength);
-            _logger.LogDebug("Text split into {ChunkCount} chunk(s) for analysis", textChunks.Count);
+            _logger.LogDebug("Text split into {ChunkCount} chunk(s) for analysis (max {MaxChunkSize} chars each)", textChunks.Count, MaxPromptLength);
 
-            // Process each chunk
-            foreach (var chunk in textChunks)
+            if (textChunks.Count == 1)
             {
-                var detected = await AnalyzeChunkAsync(chunk, [chunk], cancellationToken);
-                
+                // Single chunk — no parallelism needed
+                var detected = await AnalyzeChunkAsync(textChunks[0], [textChunks[0]], cancellationToken);
                 if (detected)
                 {
                     _logger.LogWarning("Jailbreak attempt detected in text chunk");
                     return new JailbreakDetectionResult
                     {
                         IsJailbreakDetected = true,
-                        OffendingText = chunk,
+                        OffendingText = textChunks[0],
                         Mode = DetectionMode
                     };
+                }
+            }
+            else
+            {
+                // Multiple chunks — execute all analyses in parallel
+                _logger.LogInformation("Executing {ChunkCount} content safety requests in parallel", textChunks.Count);
+
+                var tasks = textChunks.Select((chunk, index) =>
+                    AnalyzeChunkWithIndexAsync(chunk, index, cancellationToken)).ToList();
+
+                var results = await Task.WhenAll(tasks);
+
+                // Check if any chunk was flagged
+                foreach (var (detected, chunkIndex) in results)
+                {
+                    if (detected)
+                    {
+                        _logger.LogWarning("Jailbreak attempt detected in text chunk {ChunkIndex} of {ChunkCount}", chunkIndex, textChunks.Count);
+                        return new JailbreakDetectionResult
+                        {
+                            IsJailbreakDetected = true,
+                            OffendingText = textChunks[chunkIndex],
+                            Mode = DetectionMode
+                        };
+                    }
                 }
             }
 
@@ -137,6 +161,18 @@ public class ContentSafetyService : IContentSafetyService
                 Mode = DetectionMode
             };
         }
+    }
+
+    /// <summary>
+    /// Analyzes a single chunk with its index for parallel execution, returning both the result and index
+    /// </summary>
+    private async Task<(bool Detected, int ChunkIndex)> AnalyzeChunkWithIndexAsync(
+        string chunk,
+        int chunkIndex,
+        CancellationToken cancellationToken)
+    {
+        var detected = await AnalyzeChunkAsync(chunk, [chunk], cancellationToken);
+        return (detected, chunkIndex);
     }
 
     /// <summary>
