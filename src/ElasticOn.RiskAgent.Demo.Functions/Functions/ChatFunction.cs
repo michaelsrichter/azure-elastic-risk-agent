@@ -112,8 +112,8 @@ public class ChatFunction
 
                     if (detectionMode == JailbreakDetectionMode.Enforce)
                     {
-                        // Enforce mode: Return security alert message instead of blocking
-                        _logger.LogWarning("Returning security alert due to user prompt jailbreak detection in Enforce mode");
+                        // Enforce mode: Return security alert message (offending text is logged, not shown to user)
+                        _logger.LogWarning("Blocking request due to Enforce mode. Offending text: {OffendingText}", detectionResult.OffendingText);
                         var securityAlertMessage = "⚠️ Your message has been flagged by our content safety system. Please rephrase your question.";
                         
                         // Convert markdown to HTML
@@ -407,9 +407,9 @@ public class ChatFunction
 
                         if (detectionMode == JailbreakDetectionMode.Enforce)
                         {
-                            // Enforce mode: Return security alert message instead of blocking
-                            _logger.LogWarning("Returning security alert due to Enforce mode");
-                            var securityAlertMessage = $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\nOffending text:\n\"{toolOutputDetectionResult.OffendingText}\"";
+                            // Enforce mode: Return security alert message (offending text is logged, not shown to user)
+                            _logger.LogWarning("Blocking response due to Enforce mode. Offending text: {OffendingText}", toolOutputDetectionResult.OffendingText);
+                            var securityAlertMessage = "⚠️ Your request could not be processed due to a content safety concern in the retrieved data. Please try a different question.";
                             
                             // Convert markdown to HTML
                             var toolOutputPipeline = new MarkdownPipelineBuilder()

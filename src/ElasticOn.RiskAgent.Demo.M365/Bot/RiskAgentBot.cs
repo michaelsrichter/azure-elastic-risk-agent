@@ -108,12 +108,10 @@ public class RiskAgentBot : AgentApplication
 
                     if (detectionMode == JailbreakDetectionMode.Enforce)
                     {
-                        // Enforce mode: Block the request and show offending text
-                        _logger.LogWarning("Blocking request due to Enforce mode");
-                        await turnContext.SendActivityAsync(
-                            $"⚠️ Security Alert: A jailbreak attempt was detected and blocked.\n\n" +
-                            $"Offending text:\n\"{detectionResult.OffendingText}\"",
-                            cancellationToken: cancellationToken);
+                        // Enforce mode: Block the request (offending text is logged, not shown to user)
+                        _logger.LogWarning("Blocking request due to Enforce mode. Offending text: {OffendingText}", detectionResult.OffendingText);
+                        turnContext.StreamingResponse.QueueTextChunk(
+                            "⚠️ Your request could not be processed. Please rephrase your question.");
                         return; // Block the request
                     }
                     // Audit mode: Continue processing but will note the detection in the response
@@ -139,11 +137,11 @@ public class RiskAgentBot : AgentApplication
             {
                 agentId = await _azureAIAgentService.GetOrCreateAgentAsync(null);
                 turnState.Conversation.AgentId(agentId);
-                _logger.LogInformation("Created new Agent with ID: {AgentId} for conversation {ConversationId}", agentId, conversationId);
+                _logger.LogInformation("Resolved Agent with ID: {AgentId} for conversation {ConversationId} (first message, saved to conversation state)", agentId, conversationId);
             }
             else
             {
-                _logger.LogInformation("Reusing existing Agent with ID: {AgentId} for conversation {ConversationId}", agentId, conversationId);
+                _logger.LogInformation("Reusing Agent with ID: {AgentId} from conversation state for conversation {ConversationId}", agentId, conversationId);
             }
 
             #endregion
@@ -312,12 +310,10 @@ public class RiskAgentBot : AgentApplication
 
                     if (detectionMode == JailbreakDetectionMode.Enforce)
                     {
-                        // Enforce mode: Block the response and show offending text
-                        _logger.LogWarning("Blocking response due to Enforce mode");
-                        await turnContext.SendActivityAsync(
-                            $"⚠️ Security Alert: A jailbreak attempt was detected in retrieved data and blocked.\n\n" +
-                            $"Offending text:\n\"{toolOutputDetectionResult.OffendingText}\"",
-                            cancellationToken: cancellationToken);
+                        // Enforce mode: Block the response (offending text is logged, not shown to user)
+                        _logger.LogWarning("Blocking response due to Enforce mode. Offending text: {OffendingText}", toolOutputDetectionResult.OffendingText);
+                        turnContext.StreamingResponse.QueueTextChunk(
+                            "⚠️ Your request could not be processed due to a content safety concern in the retrieved data. Please try a different question.");
                         return; // Block the response
                     }
                     // Audit mode: Continue processing but will note the detection in the response
